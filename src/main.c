@@ -44,20 +44,40 @@ uint32 user_rf_cal_sector_set(void)
 
     return rf_cal_sec;
 }
-
-void task_blink(void* ignore)
+/******************************************************************************
+ * FunctionName : task_blinker
+ * Description  : test task. Blink built in LED on GPIO_2 on nodeMCU. 
+ *                If it blinks, system is still working xD
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void task_blinker(void* ignore)
 {
-    //gpio16_output_conf();
+    printf("[Blinker] Starting\n");
+    printf("[Blinker] Configuring GPIOS\n");
+    gpio16_output_conf();
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U,FUNC_GPIO2);
     while(true) {
-    	//gpio16_output_set(0);
-        gpio_output_conf(BIT2, 0, BIT2, 0);
         vTaskDelay(1000/portTICK_RATE_MS);
-    	gpio16_output_set(1);
         gpio_output_conf(0, BIT2, BIT2, 0);
+    	gpio16_output_set(1);
+        vTaskDelay(1000/portTICK_RATE_MS);
+        gpio16_output_set(0);
+        gpio_output_conf(BIT2, 0, BIT2, 0);
+    }
+    vTaskDelete(NULL);
+}
+
+void test_task(void* ignore)
+{
+    printf("[TestTask] Starting\n");
+    for( int i = 0;i<100;i++ ){
+        printf("[TestTask] %d\n",i);
         vTaskDelay(1000/portTICK_RATE_MS);
     }
 
-    vTaskDelete(NULL);
+    printf("Ending task 1\n");
+    vTaskDelete( NULL );
 }
 
 /******************************************************************************
@@ -69,8 +89,10 @@ void task_blink(void* ignore)
 void user_init(void)
 {
     printf("SDK version:%s\n", system_get_sdk_version());
-    xTaskCreate(&task_blink, "startup", 2048, NULL, 1, NULL);
+    printf("Starting OBC\n");
+    xTaskCreate(&task_blinker, "task_blinker", 2048, NULL, 1, NULL);
+    xTaskCreate(&test_task,"task_test2",2048,NULL,1,NULL);
 
-    PIN_FUNC_SELECT (PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
+
 }
 
