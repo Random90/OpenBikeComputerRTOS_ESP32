@@ -1,9 +1,18 @@
 #include "esp_common.h"
 #include "freertos/task.h"
 #include "gpio.h"
+#include "self_test.h"
+#include "freertos/semphr.h"
 
+int last_reed_close_time = 0;
+//self test flags
+bool reed_status = TRUE;
+bool lcd_status = TRUE;
+bool gps_status = TRUE;
+bool cadence_status = TRUE;
 
-int last_reed_close_time = 0; 
+//semaphore for blocking measuring tasks before self tests(4 tasks) are complete
+xSemaphoreHandle self_test_semaphore;
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -95,6 +104,22 @@ void user_init(void)
 {
     printf("SDK version:%s\n", system_get_sdk_version());
     printf("Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
+    //init self test semaphore
+    printf("Starting self test...\n");
+    self_test_semaphore =  xSemaphoreCreateCounting( 1, 0 );
+    //start self_tests. Since saetup have priority 1, use priority 0 to block execution of setup until semaphore is released
+    xTaskCreate(&fake_reed_tester,"fake_reed_tester",2048,(void*)&reed_status,0,NULL);
+    xTaskCreate(&fake_cadence_tester,"fake_cadence_tester",2048,(void*)&cadence_status,0,NULL);
+    xTaskCreate(&fake_lcd_tester,"fake_lcd_tester",2048,(void*)&lcd_status,0,NULL);
+    xTaskCreate(&fake_gps_tester,"fake_gps_tester",2048,(void*)&fake_gps_tester,0,NULL);
+    //now wait for semaphore realease
+    for(int i= 0; i< 4; i++){
+        xSemaphoreTake(self_test_semaphore, portMAX_DELAY);
+    }
+    printf("Self Test complete. Initializing\n");
+    if(!gps_status) {
+        printf("GPS not detected, OBC tracking function are offline\n");
+    }
     //store tasks handlers for later
     xTaskHandle task_blinker_handle;
     xTaskHandle reed_printer_handle;
