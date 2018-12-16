@@ -2,6 +2,9 @@
 #include "freertos/task.h"
 #include "gpio.h"
 
+
+int last_reed_close_time = 0; 
+
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
  * Description  : SDK just reversed 4 sectors, used for rf init data and paramters.
@@ -68,15 +71,17 @@ void task_blinker(void* ignore)
     vTaskDelete(NULL);
 }
 
-void test_task(void* ignore)
+void print_last_reed_time(void* parameter)
 {
-    printf("[TestTask] Starting\n");
+    printf("[ReedPrinter] Starting\n");
+    //i must cast to int pointer and then get referenced value
+    int last_reed_close_time = *((int *) parameter);
     for( int i = 0;i<100;i++ ){
-        printf("[TestTask] %d\n",i);
+        last_reed_close_time++;
+        printf("[ReedPrinter] %d\n",last_reed_close_time);
         vTaskDelay(1000/portTICK_RATE_MS);
     }
-
-    printf("Ending task 1\n");
+    printf("Ending ReedPrinter\n");
     vTaskDelete( NULL );
 }
 
@@ -89,10 +94,19 @@ void test_task(void* ignore)
 void user_init(void)
 {
     printf("SDK version:%s\n", system_get_sdk_version());
-    printf("Starting OBC\n");
-    xTaskCreate(&task_blinker, "task_blinker", 2048, NULL, 1, NULL);
-    xTaskCreate(&test_task,"task_test2",2048,NULL,1,NULL);
+    printf("Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
+    //store tasks handlers for later
+    xTaskHandle task_blinker_handle;
+    xTaskHandle reed_printer_handle;
 
+    xTaskCreate(&task_blinker, "task_blinker", 2048, NULL, 1, &task_blinker_handle);
+    printf("task_blinker started with priority %d\n",uxTaskPriorityGet(task_blinker_handle));
 
+    //start fake reed counter task, assign a global int to it
+    xTaskCreate(&print_last_reed_time,"reed_printer",2048,(void*)&last_reed_close_time,2,&reed_printer_handle);
+    printf("reed_printer started with priority %d\n",uxTaskPriorityGet(reed_printer_handle));
+
+    //@TODO display some timings info. For fun.
+    printf("Startup ended. Tasks running: %d\n",uxTaskGetNumberOfTasks());
 }
 
