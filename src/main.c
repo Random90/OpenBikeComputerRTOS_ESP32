@@ -106,18 +106,18 @@ void user_init(void)
     printf("Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
     //init self test semaphore
     printf("Starting self test...\n");
-    self_test_semaphore =  xSemaphoreCreateCounting( 1, 0 );
+    self_test_semaphore =  xSemaphoreCreateCounting( 4, 0 );
     //start self_tests. Since saetup have priority 1, use priority 0 to block execution of setup until semaphore is released
     xTaskCreate(&fake_reed_tester,"fake_reed_tester",2048,(void*)&reed_status,0,NULL);
     xTaskCreate(&fake_cadence_tester,"fake_cadence_tester",2048,(void*)&cadence_status,0,NULL);
     xTaskCreate(&fake_lcd_tester,"fake_lcd_tester",2048,(void*)&lcd_status,0,NULL);
-    xTaskCreate(&fake_gps_tester,"fake_gps_tester",2048,(void*)&fake_gps_tester,0,NULL);
+    xTaskCreate(&fake_gps_tester,"fake_gps_tester",2048,(void*)&gps_status,0,NULL);
     //now wait for semaphore realease
     for(int i= 0; i< 4; i++){
         xSemaphoreTake(self_test_semaphore, portMAX_DELAY);
     }
     printf("Self Test complete. Initializing\n");
-    if(!gps_status) {
+    if(gps_status == FALSE) {
         printf("GPS not detected, OBC tracking function are offline\n");
     }
     //store tasks handlers for later

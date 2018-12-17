@@ -4,42 +4,42 @@
 #include "freertos/semphr.h"
 //its all fake! :)
 extern xSemaphoreHandle self_test_semaphore;
-void fake_reed_tester(void* status) {
+extern bool reed_status;
+extern bool lcd_status;
+extern bool gps_status;
+extern bool cadence_status;
+void fake_reed_tester(void* ignore) {
     //we have reed connected! impossible (without additional curcuit) to check in real life, but OK!
     vTaskDelay(200/portTICK_RATE_MS);
-    bool is_working = *((bool *) status);
-    is_working = TRUE;
+    reed_status = TRUE;
     printf("[selfTest] Reed switch is OK\n");
     //release the samophore, my work here is done!
     xSemaphoreGive(self_test_semaphore);
     vTaskDelete( NULL );
 }
 
-void fake_cadence_tester(void* status) 
+void fake_cadence_tester(void* ignore) 
 {
     vTaskDelay(300/portTICK_RATE_MS);
-    bool is_working = *((bool *) status);
-    is_working = TRUE;
+    cadence_status = TRUE;
     printf("[selfTest] Cadence meter is OK\n");
     xSemaphoreGive(self_test_semaphore);
     vTaskDelete( NULL );
 }
 
-void fake_lcd_tester(void* status) 
+void fake_lcd_tester(void* ignore) 
 {
     vTaskDelay(1600/portTICK_RATE_MS);
-    bool is_working = *((bool *) status);
-    is_working = TRUE;
+    lcd_status = TRUE;
     printf("[selfTest] LCD is OK\n");
     xSemaphoreGive(self_test_semaphore);
     vTaskDelete( NULL );
 }
 
-void fake_gps_tester(void* status) 
+void fake_gps_tester(void* ignore) 
 {
     vTaskDelay(4000/portTICK_RATE_MS);
-    bool is_working = *((bool *) status);
-    is_working = FALSE;
+    gps_status = FALSE;
     printf("[selfTest] GPS module is not connected\n");
     xSemaphoreGive(self_test_semaphore);
     vTaskDelete( NULL );
