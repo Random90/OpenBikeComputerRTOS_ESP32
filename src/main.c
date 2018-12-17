@@ -4,7 +4,7 @@
 #include "self_test.h"
 #include "freertos/semphr.h"
 
-int last_reed_close_time = 0;
+uint32 last_reed_close_time = 0;
 //self test flags
 bool reed_status = TRUE;
 bool lcd_status = TRUE;
@@ -83,9 +83,10 @@ void task_blinker(void* ignore)
 void print_last_reed_time(void* parameter)
 {
     printf("[ReedPrinter] Starting\n");
-    for( int i = 0;i<100;i++ ){
-        last_reed_close_time++;
-        printf("[ReedPrinter] %d\n",last_reed_close_time);
+    for( ;; ){
+        //set time to millis
+        last_reed_close_time = system_get_time() / 1000;
+        printf("[ReedPrinter] current time: %d\n",last_reed_close_time);
         vTaskDelay(1000/portTICK_RATE_MS);
     }
     printf("Ending ReedPrinter\n");
