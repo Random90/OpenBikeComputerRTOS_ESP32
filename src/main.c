@@ -83,8 +83,6 @@ void task_blinker(void* ignore)
 void print_last_reed_time(void* parameter)
 {
     printf("[ReedPrinter] Starting\n");
-    //i must cast to int pointer and then get referenced value
-    int last_reed_close_time = *((int *) parameter);
     for( int i = 0;i<100;i++ ){
         last_reed_close_time++;
         printf("[ReedPrinter] %d\n",last_reed_close_time);
