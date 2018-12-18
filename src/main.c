@@ -1,10 +1,42 @@
+
 #include "esp_common.h"
 #include "freertos/task.h"
 #include "gpio.h"
 #include "self_test.h"
 #include "freertos/semphr.h"
 
-uint32 last_reed_close_time = 0;
+#define ETS_GPIO_INTR_ENABLE() _xt_isr_unmask(1 << ETS_GPIO_INUM) //enable interrupt by disabling specific cpu mask
+#define ETS_GPIO_INTR_DISABLE() _xt_isr_mask(1 << ETS_GPIO_INUM) //disable interrupt
+
+//reed switch settings
+#define REED_ISR_DBC_TIME 50 //debouce in millis @TODO calculate optimal max time(bike cant ride 200kmh, can it?)
+#define REED_IO_MUC PERIPHS_IO_MUX_MTCK_U
+#define REED_IO_NUM 13
+#define REED_IO_FUNC FUNC_GPIO13
+#define REED_IO_PIN GPIO_Pin_13 //pin 13 is D7 on nodeMCU
+
+//interrupt globals @TODO use queues to change values?
+static volatile uint32 last_reed_close_time = 0; //miliseconds sice startup
+static volatile uint32 reed_closed_number = 0;
+/**@brief handle interrupts
+ * @todo ithis should be on falling edge, but is it?
+ */
+void io_intr_handler(void) {
+    uint32 status = GPIO_REG_READ(GPIO_STATUS_ADDRESS); //read status of interrupt
+    uint32 isr_start_time = system_get_time() / 1000;
+    //reed switch
+    if (status & REED_IO_PIN) {
+        if((isr_start_time - last_reed_close_time) > REED_ISR_DBC_TIME) {
+            reed_closed_number++;
+            //just for debug, remove printf from ISR or move it to special ISR_ECHO task
+            //printf("[ISR][Reed]: started %d, last %d, now %d\n", isr_start_time, last_reed_close_time, system_get_time() / 1000); 
+        }
+    }    
+    //@TODO isr startup or ending time here?
+    last_reed_close_time = isr_start_time;
+    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, status); //CLEAR THE STATUS IN THE W1 INTERRUPT REGISTER
+}
+
 //self test flags
 bool reed_status = TRUE;
 bool lcd_status = TRUE;
@@ -14,18 +46,7 @@ bool cadence_status = TRUE;
 //semaphore for blocking measuring tasks before self tests(4 tasks) are complete
 xSemaphoreHandle self_test_semaphore;
 
-/******************************************************************************
- * FunctionName : user_rf_cal_sector_set
- * Description  : SDK just reversed 4 sectors, used for rf init data and paramters.
- *                We add this function to force users to set rf cal sector, since
- *                we don't know which sector is free in user's application.
- *                sector map for last several sectors : ABCCC
- *                A : rf cal
- *                B : rf init data
- *                C : sdk parameters
- * Parameters   : none
- * Returns      : rf cal sector
-*******************************************************************************/
+//must be here :(
 uint32 user_rf_cal_sector_set(void)
 {
     flash_size_map size_map = system_get_flash_size_map();
@@ -56,13 +77,7 @@ uint32 user_rf_cal_sector_set(void)
 
     return rf_cal_sec;
 }
-/******************************************************************************
- * FunctionName : task_blinker
- * Description  : test task. Blink built in LED on GPIO_2 on nodeMCU. 
- *                If it blinks, system is still working xD
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
+//@brief blinker will blink using two LEDS - test if everything is working real time
 void task_blinker(void* ignore)
 {
     printf("[Blinker] Starting\n");
@@ -79,17 +94,17 @@ void task_blinker(void* ignore)
     }
     vTaskDelete(NULL);
 }
-
+/*
+Every 5 seconds print to serial number of reed switch closed times
+*/
 void print_last_reed_time(void* parameter)
 {
     printf("[ReedPrinter] Starting\n");
     for( ;; ){
-        //set time to millis
-        last_reed_close_time = system_get_time() / 1000;
-        printf("[ReedPrinter] current time: %d\n",last_reed_close_time);
-        vTaskDelay(1000/portTICK_RATE_MS);
+        printf("[ReedPrinter] reed closed %d times\n",reed_closed_number);
+        vTaskDelay(5000/portTICK_RATE_MS);
     }
-    printf("Ending ReedPrinter\n");
+    printf("Ending ReedPrinter!\n");
     vTaskDelete( NULL );
 }
 
@@ -116,6 +131,16 @@ void user_init(void)
         xSemaphoreTake(self_test_semaphore, portMAX_DELAY);
     }
     printf("Self Test complete. Initializing\n");
+    printf("Attaching reed switch interrupt\n");
+    GPIO_ConfigTypeDef io_in_conf;
+    io_in_conf.GPIO_IntrType = GPIO_PIN_INTR_NEGEDGE;
+    io_in_conf.GPIO_Mode = GPIO_Mode_Input;
+    io_in_conf.GPIO_Pin = REED_IO_PIN;
+    io_in_conf.GPIO_Pullup = GPIO_PullUp_EN;
+    gpio_config(&io_in_conf);
+    gpio_intr_handler_register(io_intr_handler, NULL);
+    ETS_GPIO_INTR_ENABLE();
+
     if(gps_status == FALSE) {
         printf("GPS not detected, OBC tracking function are offline\n");
     }
@@ -126,7 +151,7 @@ void user_init(void)
     xTaskCreate(&task_blinker, "task_blinker", 2048, NULL, 1, &task_blinker_handle);
     printf("task_blinker started with priority %d\n",uxTaskPriorityGet(task_blinker_handle));
 
-    //start fake reed counter task, assign a global int to it
+    //start reed printer for testing purposes only
     xTaskCreate(&print_last_reed_time,"reed_printer",2048,(void*)&last_reed_close_time,2,&reed_printer_handle);
     printf("reed_printer started with priority %d\n",uxTaskPriorityGet(reed_printer_handle));
 
