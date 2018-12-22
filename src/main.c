@@ -80,15 +80,18 @@ uint32 user_rf_cal_sector_set(void)
 //@brief blinker will blink using two LEDS - test if everything is working real time
 void task_blinker(void* ignore)
 {
+    
+    portTickType xLastWakeTime;
     printf("[Blinker] Starting\n");
     printf("[Blinker] Configuring GPIOS\n");
     gpio16_output_conf();
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U,FUNC_GPIO2);
+    xLastWakeTime = xTaskGetTickCount();
     while(true) {
-        vTaskDelay(1000/portTICK_RATE_MS);
+        vTaskDelayUntil(&xLastWakeTime,1000/portTICK_RATE_MS);
         gpio_output_conf(0, BIT2, BIT2, 0);
     	gpio16_output_set(1);
-        vTaskDelay(1000/portTICK_RATE_MS);
+        vTaskDelayUntil(&xLastWakeTime,1000/portTICK_RATE_MS);
         gpio16_output_set(0);
         gpio_output_conf(BIT2, 0, BIT2, 0);
     }
@@ -99,10 +102,12 @@ Every 5 seconds print to serial number of reed switch closed times
 */
 void print_last_reed_time(void* parameter)
 {
+    portTickType xLastWakeTime;
     printf("[ReedPrinter] Starting\n");
+    xLastWakeTime = xTaskGetTickCount();
     for( ;; ){
         printf("[ReedPrinter] reed closed %d times\n",reed_closed_number);
-        vTaskDelay(5000/portTICK_RATE_MS);
+        vTaskDelayUntil(&xLastWakeTime, 5000/portTICK_RATE_MS);
     }
     printf("Ending ReedPrinter!\n");
     vTaskDelete( NULL );
