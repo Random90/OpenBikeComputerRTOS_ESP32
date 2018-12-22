@@ -120,16 +120,16 @@ void user_init(void)
     printf("Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
     //init self test semaphore
     printf("Starting self test...\n");
-    self_test_semaphore =  xSemaphoreCreateCounting( 4, 0 );
-    //start self_tests. Since saetup have priority 1, use priority 0 to block execution of setup until semaphore is released
-    xTaskCreate(&fake_reed_tester,"fake_reed_tester",2048,(void*)&reed_status,0,NULL);
-    xTaskCreate(&fake_cadence_tester,"fake_cadence_tester",2048,(void*)&cadence_status,0,NULL);
-    xTaskCreate(&fake_lcd_tester,"fake_lcd_tester",2048,(void*)&lcd_status,0,NULL);
-    xTaskCreate(&fake_gps_tester,"fake_gps_tester",2048,(void*)&gps_status,0,NULL);
+    //
+    self_test_semaphore = xSemaphoreCreateCounting(1,0);
+    //start self_tests. Since setup have priority 1, use priority 2 to block execution of setup until semaphore is released
+    //edit: that priorioty teory is not holding water. Semaphore blocks execution of setup regardless of prority used for task running.
+    // i wonder though why binarySemaphore is not blocking execution of setup
+    //setup is probably not a task
+    xTaskCreate(&self_test,"self_test_1time_task",176,NULL,2,NULL);
     //now wait for semaphore realease
-    for(int i= 0; i< 4; i++){
-        xSemaphoreTake(self_test_semaphore, portMAX_DELAY);
-    }
+    xSemaphoreTake(self_test_semaphore, portMAX_DELAY);
+    
     printf("Self Test complete. Initializing\n");
     printf("Attaching reed switch interrupt\n");
     GPIO_ConfigTypeDef io_in_conf;
@@ -142,19 +142,21 @@ void user_init(void)
     ETS_GPIO_INTR_ENABLE();
 
     if(gps_status == FALSE) {
-        printf("GPS not detected, OBC tracking function are offline\n");
+        printf("GPS not detected, OBC tracking functions are offline\n");
     }
     //store tasks handlers for later
     xTaskHandle task_blinker_handle;
     xTaskHandle reed_printer_handle;
 
-    xTaskCreate(&task_blinker, "task_blinker", 2048, NULL, 1, &task_blinker_handle);
+    xTaskCreate(&task_blinker, "task_blinker", 512, NULL, 1, &task_blinker_handle);
     printf("task_blinker started with priority %d\n",uxTaskPriorityGet(task_blinker_handle));
 
     //start reed printer for testing purposes only
-    xTaskCreate(&print_last_reed_time,"reed_printer",2048,(void*)&last_reed_close_time,2,&reed_printer_handle);
+    xTaskCreate(&print_last_reed_time,"reed_printer",512,(void*)&last_reed_close_time,2,&reed_printer_handle);
     printf("reed_printer started with priority %d\n",uxTaskPriorityGet(reed_printer_handle));
 
+    //IMPORTANT NOTE: task_blinker has lower priority than reed printer, but it is still able to run, because of vTaskDelay used in both tasks.
+    // If print_last_reed_time is blocked by delay, CPU has free ticks for lower priority tasks
     //@TODO display some timings info. For fun.
     printf("Startup ended. Tasks running: %d\n",uxTaskGetNumberOfTasks());
 }
