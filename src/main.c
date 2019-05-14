@@ -4,6 +4,7 @@
 #include "gpio.h"
 #include "self_test.h"
 #include "freertos/semphr.h"
+#include "settings.h"
 
 #define ETS_GPIO_INTR_ENABLE() _xt_isr_unmask(1 << ETS_GPIO_INUM) //enable interrupt by disabling specific cpu mask
 #define ETS_GPIO_INTR_DISABLE() _xt_isr_mask(1 << ETS_GPIO_INUM) //disable interrupt
@@ -14,9 +15,10 @@
 #define REED_IO_NUM 13
 #define REED_IO_FUNC FUNC_GPIO13
 #define REED_IO_PIN GPIO_Pin_13 //pin 13 is D7 on nodeMCU
-
+//speed calculate
+//(float(CIRCUMFERENCE)/1000000)/((float(time) - float(last_magnet_time))/3600000); //km/h
 //interrupt globals @TODO use queues to change values?
-static volatile uint32 last_reed_close_time = 0; //miliseconds sice startup
+static volatile uint32 last_reed_close_time = 0; //miliseconds since startup
 static volatile uint32 reed_closed_number = 0;
 /**@brief handle interrupts
  * @todo ithis should be on falling edge, but is it?

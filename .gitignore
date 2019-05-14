@@ -5,3 +5,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 test/MockReedSwitch/.*
+
+\.vscode/ipch/3581181d70f3af10/MAIN\.ipch
+
+\.vscode/ipch/3581181d70f3af10/mmap_address\.bin

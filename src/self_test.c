@@ -9,6 +9,7 @@ extern bool lcd_status;
 extern bool gps_status;
 extern bool cadence_status;
 void self_test(void* ignore) {
+    gpio16_output_set(0);
     //fake delay
     vTaskDelay(100/portTICK_RATE_MS);
     lcd_status = TRUE;
