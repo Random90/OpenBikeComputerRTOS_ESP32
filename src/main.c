@@ -3,14 +3,24 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
+#include "driver/spi_common.h"
 #include "sdkconfig.h"
-
+#include "pcd8544.h"
 #define ESP_INTR_FLAG_DEFAULT 0
 
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 #define REED_IO_NUM 18
 
+//hardware setup
+pcd8544_config_t config = {
+        .spi_host = HSPI_HOST,
+        .is_backlight_common_anode = false,
+};
+// RTOS
 static xQueueHandle reed_evt_queue = NULL;
+
+// OBC vars
+uint32_t rotations = 0;
 
 void blink_task(void *pvParameter)
 {
@@ -43,12 +53,14 @@ static void check_status(void *arg) {
 
 static void reed_task(void* arg)
 {
-    uint32_t counter = 0;
     int val;
     for(;;) {
         if(xQueueReceive(reed_evt_queue, &val, portMAX_DELAY)) {
-            counter++;
-            printf("[REED] %d!\n",counter);
+            rotations++;
+            printf("[REED] %d!\n",rotations);
+            pcd8544_set_pos(0, 4);
+            pcd8544_printf("%d",rotations);
+            pcd8544_sync_and_gc();
         }
     }
 }
@@ -62,12 +74,24 @@ static void IRAM_ATTR io_intr_handler(void* arg) {
 
 void app_main()
 {
-    printf("IDF version: %s\n",esp_get_idf_version());
-    printf("Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
-    printf("Init reed queue\n");
+    printf("[OBC] IDF version: %s\n",esp_get_idf_version());
+    printf("[OBC] Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
+
+    printf("[OBC] Init pcd8544 screen\n");
+    
+    pcd8544_init(&config);
+    pcd8544_set_backlight(true);
+    pcd8544_clear_display();
+    pcd8544_finalize_frame_buf();
+    pcd8544_puts("OpenBikeComputer ESP32");
+    pcd8544_set_pos(0, 3);
+    pcd8544_puts("Interrupt:");
+    pcd8544_sync_and_gc();
+
+    printf("[OBC] Init reed queue\n");
     reed_evt_queue = xQueueCreate(10, sizeof(uint32_t));
 
-    printf("Attaching reed switch interrupt\n");
+    printf("[OBC] Attaching reed switch interrupt\n");
     gpio_config_t io_conf;
     io_conf.mode = GPIO_MODE_INPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
@@ -80,11 +104,11 @@ void app_main()
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     gpio_isr_handler_add(REED_IO_NUM, io_intr_handler, (void*) REED_IO_NUM);
 
-    printf("Initialize blinking!\n");
+    printf("[OBC] Initialize blinking!\n");
     xTaskCreate(&blink_task, "blink_task", 2048, NULL, 5, NULL);
-    printf("Start reed switch task!\n");
+    printf("[OBC] Start reed switch task!\n");
     xTaskCreate(&reed_task, "reed_task", 2048, NULL, 1, NULL);
-    printf("Start status checker task\n");
+    printf("[OBC] Start status checker task\n");
     xTaskCreate(&check_status, "check_status_task", 2048, NULL, 5, NULL);
-    printf("OBC startup complete. Tasks running: %d\n",uxTaskGetNumberOfTasks());
+    printf("[OBC] OBC startup complete. Tasks running: %d\n",uxTaskGetNumberOfTasks());
 }
