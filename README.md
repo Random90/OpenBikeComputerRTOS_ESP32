@@ -1,5 +1,5 @@
 # OpenBikeComputerRTOS
-This repo is an idea for open source bike computer based on freeRTOS on ESP8266.
+This repo is an idea for open source bike computer based on freeRTOS on ~~ESP8266~~ ESP32. (ESP32 is much newer hardware, no reason to stick with esp8266 right now)
 First commits will be my attempts of learning C and freeRTOS env. I've first made bike computer using arduino nano, so this might be refered as version 2.
 
 Core functionality will consist of basic speed measures, distance, cadence.

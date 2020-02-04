@@ -16,17 +16,19 @@ pcd8544_config_t config = {
         .spi_host = HSPI_HOST,
         .is_backlight_common_anode = false,
 };
-// RTOS
+// RTOS specific variables
 static xQueueHandle reed_evt_queue = NULL;
 
-// OBC vars
+// OBC specific variables
+
 uint32_t rotations = 0;
 
 void blink_task(void *pvParameter)
 {
-    portTickType xLastWakeTime;
+    
     printf("[Blinker] Starting\n");
     printf("[Blinker] Configuring GPIOS\n");
+    portTickType xLastWakeTime;
     /* specify that the function of a given pin 
     should be that of GPIO as opposed to some other function 
     */
@@ -53,13 +55,19 @@ static void check_status(void *arg) {
 
 static void reed_task(void* arg)
 {
-    int val;
+    portTickType xLastReedTickCount = 0;
+    portTickType xCurrentReedTickCount;
+    int timeElapsedMS;
     for(;;) {
-        if(xQueueReceive(reed_evt_queue, &val, portMAX_DELAY)) {
+        if(xQueueReceive(reed_evt_queue, &xCurrentReedTickCount, portMAX_DELAY)) {
+            // TODO create buffer for reed time impulses before calculating time and speed
             rotations++;
-            printf("[REED] %d!\n",rotations);
+            timeElapsedMS = ((int) xCurrentReedTickCount - (int) xLastReedTickCount) * (int) portTICK_RATE_MS;
+            xLastReedTickCount = xCurrentReedTickCount;
+            // TODO create additional task for refreshing the screen
+            printf("[REED] count: %d, time: %d\n", rotations, timeElapsedMS);
             pcd8544_set_pos(0, 4);
-            pcd8544_printf("%d",rotations);
+            pcd8544_printf("%d %d", rotations, timeElapsedMS);
             pcd8544_sync_and_gc();
         }
     }
@@ -67,9 +75,9 @@ static void reed_task(void* arg)
 
 //IRAM_ATTR - function with this will be moved to RAM in order to execute faster than default from flash
 static void IRAM_ATTR io_intr_handler(void* arg) {
-    // send GPIO for now, consider sending lastWakeTime?
-     uint32_t gpio_num = (uint32_t) arg;
-    xQueueSendFromISR(reed_evt_queue, &gpio_num, NULL);
+     portTickType xLastReedTickCount;
+     xLastReedTickCount = xTaskGetTickCount();
+    xQueueSendFromISR(reed_evt_queue, &xLastReedTickCount, NULL);
 }
 
 void app_main()
