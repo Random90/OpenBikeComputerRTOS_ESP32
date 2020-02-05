@@ -6,6 +6,7 @@
 #include "driver/spi_common.h"
 #include "sdkconfig.h"
 #include "pcd8544.h"
+#include "settings.h"
 #define ESP_INTR_FLAG_DEFAULT 0
 
 #define BLINK_GPIO CONFIG_BLINK_GPIO
@@ -58,16 +59,19 @@ static void reed_task(void* arg)
     portTickType xLastReedTickCount = 0;
     portTickType xCurrentReedTickCount;
     int timeElapsedMS;
+    float speed, distance;
     for(;;) {
         if(xQueueReceive(reed_evt_queue, &xCurrentReedTickCount, portMAX_DELAY)) {
             // TODO create buffer for reed time impulses before calculating time and speed
             rotations++;
             timeElapsedMS = ((int) xCurrentReedTickCount - (int) xLastReedTickCount) * (int) portTICK_RATE_MS;
+            speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) timeElapsedMS / 3600000 ); //km/h
+            distance = (float)rotations * (float)CIRCUMFERENCE/1000000;
             xLastReedTickCount = xCurrentReedTickCount;
             // TODO create additional task for refreshing the screen
-            printf("[REED] count: %d, time: %d\n", rotations, timeElapsedMS);
+            printf("[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f\n", rotations, speed, timeElapsedMS, distance);
             pcd8544_set_pos(0, 4);
-            pcd8544_printf("%d %d", rotations, timeElapsedMS);
+            pcd8544_printf("%d %0.2f %0.2f", rotations, speed, distance);
             pcd8544_sync_and_gc();
         }
     }
