@@ -4,9 +4,13 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
+
 #include "sdkconfig.h"
 #include "pcd8544.h"
 #include "settings.h"
+#include "obc.h"
+
+#include "Tasks/screen_pcd8544.h"
 #define ESP_INTR_FLAG_DEFAULT 0
 
 #define BLINK_GPIO CONFIG_BLINK_GPIO
@@ -20,16 +24,19 @@ pcd8544_config_t config = {
 // RTOS specific variables
 static xQueueHandle reed_evt_queue = NULL;
 
-// OBC specific variables
-
-uint32_t rotations = 0;
-
+// OBC global ride params
+ride_params_t rideParams = {
+     .rotations = 0,
+     .prevRotationTickCount = 0,
+     .speed = 0.0,
+     .distance = 0.0,
+};
 void blink_task(void *pvParameter)
 {
-    
-    printf("[Blinker] Starting\n");
-    printf("[Blinker] Configuring GPIOS\n");
     portTickType xLastWakeTime;
+
+    printf("[OBC] Initialize blinking\n");
+
     /* specify that the function of a given pin 
     should be that of GPIO as opposed to some other function 
     */
@@ -47,6 +54,9 @@ void blink_task(void *pvParameter)
 
 static void check_status(void *arg) {
     int msg_count;
+
+    printf("[OBC] Start status checker task\n");
+
     while(true) {
         msg_count = uxQueueMessagesWaitingFromISR(reed_evt_queue);
         printf("[STATUS]queue: %d\n", msg_count);
@@ -54,43 +64,31 @@ static void check_status(void *arg) {
     }
 }
 
-static void reed_task(void* arg)
+static void reed_task(void* data)
 {
-    portTickType xLastReedTickCount = 0;
-    portTickType xCurrentReedTickCount;
-    int timeElapsedMS;
-    float speed, distance;
+    printf("[OBC] Start reed switch task!\n");
+
     for(;;) {
-        if(xQueueReceive(reed_evt_queue, &xCurrentReedTickCount, portMAX_DELAY)) {
+        if(xQueueReceive(reed_evt_queue, &rideParams.rotationTickCount, portMAX_DELAY)) {
             // TODO create buffer for reed time impulses before calculating time and speed
-            rotations++;
-            timeElapsedMS = ((int) xCurrentReedTickCount - (int) xLastReedTickCount) * (int) portTICK_RATE_MS;
-            speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) timeElapsedMS / 3600000 ); //km/h
-            distance = (float)rotations * (float)CIRCUMFERENCE/1000000;
-            xLastReedTickCount = xCurrentReedTickCount;
-            // TODO create additional task for refreshing the screen
-            printf("[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f\n", rotations, speed, timeElapsedMS, distance);
-            pcd8544_set_pos(0, 4);
-            pcd8544_printf("%d %0.2f %0.2f", rotations, speed, distance);
-            pcd8544_sync_and_gc();
+            rideParams.rotations++;
+            rideParams.msBetweenRotationTicks = ((int) rideParams.rotationTickCount - (int) rideParams.prevRotationTickCount) * (int) portTICK_RATE_MS;
+            rideParams.speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) rideParams.msBetweenRotationTicks / 3600000 ); //km/h
+            rideParams.distance = (float)rideParams.rotations * (float)CIRCUMFERENCE/1000000;
+            rideParams.prevRotationTickCount = rideParams.rotationTickCount;    
+            printf("[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f\n", rideParams.rotations, rideParams.speed, rideParams.msBetweenRotationTicks, rideParams.distance);        
         }
     }
 }
 
 //IRAM_ATTR - function with this will be moved to RAM in order to execute faster than default from flash
-static void IRAM_ATTR io_intr_handler(void* arg) {
-     portTickType xLastReedTickCount;
-     xLastReedTickCount = xTaskGetTickCount();
+static void IRAM_ATTR vReedISR(void* arg) {
+    portTickType xLastReedTickCount = xTaskGetTickCount();
     xQueueSendFromISR(reed_evt_queue, &xLastReedTickCount, NULL);
 }
 
-void app_main()
-{
-    printf("[OBC] IDF version: %s\n",esp_get_idf_version());
-    printf("[OBC] Starting OBC. Tasks running: %d\n",uxTaskGetNumberOfTasks());
-
+void vInitPcd8544Screen() {
     printf("[OBC] Init pcd8544 screen\n");
-    
     pcd8544_init(&config);
     pcd8544_set_backlight(true);
     pcd8544_clear_display();
@@ -99,11 +97,21 @@ void app_main()
     pcd8544_set_pos(0, 3);
     pcd8544_puts("Interrupt:");
     pcd8544_sync_and_gc();
+}
 
-    printf("[OBC] Init reed queue\n");
+void vInitTasks() {
+    xTaskCreate(&blink_task, "blink_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&check_status, "check_status_task", 2048, NULL, 3, NULL);
+    xTaskCreate(&reed_task, "reed_task", 2048, NULL, 2, NULL);  
+    xTaskCreate(&vScreenRefresh, "refresh_screen", 2048, NULL, 1, NULL);
+}
+
+void vAttachInterrupts() {
+    printf("[OBC] Attaching reed switch interrupt\n");
+    // create queue for the reed interrupt
     reed_evt_queue = xQueueCreate(10, sizeof(uint32_t));
 
-    printf("[OBC] Attaching reed switch interrupt\n");
+    // configure reed switch gpio
     gpio_config_t io_conf;
     io_conf.mode = GPIO_MODE_INPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
@@ -114,13 +122,17 @@ void app_main()
     gpio_config(&io_conf);
     gpio_set_intr_type(REED_IO_NUM, GPIO_INTR_POSEDGE);
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
-    gpio_isr_handler_add(REED_IO_NUM, io_intr_handler, (void*) REED_IO_NUM);
+    gpio_isr_handler_add(REED_IO_NUM, vReedISR, (void*) REED_IO_NUM);
+}
 
-    printf("[OBC] Initialize blinking!\n");
-    xTaskCreate(&blink_task, "blink_task", 2048, NULL, 5, NULL);
-    printf("[OBC] Start reed switch task!\n");
-    xTaskCreate(&reed_task, "reed_task", 2048, NULL, 1, NULL);
-    printf("[OBC] Start status checker task\n");
-    xTaskCreate(&check_status, "check_status_task", 2048, NULL, 5, NULL);
-    printf("[OBC] OBC startup complete. Tasks running: %d\n",uxTaskGetNumberOfTasks());
+void app_main()
+{
+    // TODO use ESP_LOGI?
+    printf("[OBC] IDF version: %s\n",esp_get_idf_version());
+    printf("[OBC] Initializing \n");
+    vInitPcd8544Screen();
+    vAttachInterrupts();
+    vInitTasks();
+    printf("[OBC] Init reed queue\n");
+    printf("[OBC] Startup complete \n");
 }
