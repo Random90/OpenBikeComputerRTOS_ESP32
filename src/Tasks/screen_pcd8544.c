@@ -12,11 +12,20 @@ void vScreenRefresh(void* data) {
         
         vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
         // TODO add mutual exclusion for reading rideParams?
+        pcd8544_set_pos(0, 0);
+        pcd8544_printf("Speed: %0.2f",  rideParams.speed);
+        pcd8544_set_pos(0, 1);
+        pcd8544_printf("Distance: %0.2f",  rideParams.distance);
+        pcd8544_set_pos(0, 2);
+        pcd8544_printf("Rotations:");
+        pcd8544_set_pos(0, 3);
+        pcd8544_printf("%d",  rideParams.rotations);
         pcd8544_set_pos(0, 4);
-        pcd8544_printf("%d %0.2f %0.2f", rideParams.rotations, rideParams.speed, rideParams.distance);
+        // FIXME add better line clearing
+        pcd8544_puts("              ");
+        pcd8544_set_pos(0, 4);
+        pcd8544_printf("DiffMS: %d",  rideParams.msBetweenRotationTicks);
         pcd8544_sync_and_gc();
-        printf("[PCD] count: %d, speed: %0.2f, diff: %d, distance: %0.2f\n", rideParams.rotations, rideParams.speed, rideParams.msBetweenRotationTicks, rideParams.distance);     
-
     }
 
 }

@@ -93,9 +93,6 @@ void vInitPcd8544Screen() {
     pcd8544_set_backlight(true);
     pcd8544_clear_display();
     pcd8544_finalize_frame_buf();
-    pcd8544_puts("OpenBikeComputer ESP32");
-    pcd8544_set_pos(0, 3);
-    pcd8544_puts("Interrupt:");
     pcd8544_sync_and_gc();
 }
 
