@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 // OBC specific global structs
  typedef struct {
+    bool moving;
     uint32_t rotations;
     portTickType prevRotationTickCount;
     portTickType rotationTickCount;

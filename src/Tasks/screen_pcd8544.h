@@ -4,11 +4,13 @@
 #include "obc.h"
 
 
+#define REFRESH_RATE_MS 500
+
 extern ride_params_t rideParams;
 
 /* Task used to refresh the pcd8544 screen displayed information every half second
 */
 
-void vScreenRefresh(void* data);
+void vScreenRefreshTask(void* data);
 
 #endif

@@ -1,10 +1,15 @@
-#define KILOMETERS_PER_HOUR 0
-#define MILES_PER_HOUR  1
+#ifndef SETTINGS
+#define SETTINGS
 
-//change this to match your bikes
 // tire circuference in milimeters
 #define CIRCUMFERENCE 2012
-//yoour preferences
-#define SPEED_UNITS KILOMETERS_PER_HOUR
+/* Time after which OBC enters 'not riding' mode*/
+#define RIDE_TIMEOUT_MS 2500
+
+#define ESP_INTR_FLAG_DEFAULT 0
+#define BLINK_GPIO CONFIG_BLINK_GPIO
+#define REED_IO_NUM 18
+
+#endif
 
 

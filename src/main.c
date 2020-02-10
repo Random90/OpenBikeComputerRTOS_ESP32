@@ -11,10 +11,7 @@
 #include "obc.h"
 
 #include "Tasks/screen_pcd8544.h"
-#define ESP_INTR_FLAG_DEFAULT 0
 
-#define BLINK_GPIO CONFIG_BLINK_GPIO
-#define REED_IO_NUM 18
 
 //hardware setup
 pcd8544_config_t config = {
@@ -26,12 +23,13 @@ static xQueueHandle reed_evt_queue = NULL;
 
 // OBC global ride params
 ride_params_t rideParams = {
-     .rotations = 0,
-     .prevRotationTickCount = 0,
-     .speed = 0.0,
-     .distance = 0.0,
+    .moving = false, 
+    .rotations = 0,
+    .prevRotationTickCount = 0,
+    .speed = 0.0,
+    .distance = 0.0,
 };
-void blink_task(void *pvParameter)
+void vBlinkerTask(void *pvParameter)
 {
     portTickType xLastWakeTime;
 
@@ -51,26 +49,41 @@ void blink_task(void *pvParameter)
         gpio_set_level(BLINK_GPIO, 1);
     }
 }
-
-static void check_status(void *arg) {
+/* 
+TODO maybe use simple timer instead of the task to avoid preemption 
+*/
+static void vRideStatusIntervalCheckTask(void *arg) {
     int msg_count;
+    TickType_t currentTickCount;
+    int timeInactive;
 
-    printf("[OBC] Start status checker task\n");
+    printf("[OBC] Starting ride status watchdog task\n");
 
     while(true) {
         msg_count = uxQueueMessagesWaitingFromISR(reed_evt_queue);
-        printf("[STATUS]queue: %d\n", msg_count);
-        vTaskDelay(1000/portTICK_RATE_MS);
+        currentTickCount = xTaskGetTickCount();
+        timeInactive = ((int) currentTickCount - (int) rideParams.prevRotationTickCount) * (int) portTICK_RATE_MS;
+
+        if(rideParams.moving && !msg_count && timeInactive > RIDE_TIMEOUT_MS) {
+            printf("[RIDE_STATUS] Stopped moving\n");
+            rideParams.speed = 0.0;
+            rideParams.msBetweenRotationTicks = 0;
+            rideParams.moving = false;
+            // TODO add semaphore and run data saving, stop screen refresh, run powersave algorithms, sync with could etc
+        } 
+        vTaskDelayUntil(&currentTickCount, 1000/portTICK_RATE_MS);
     }
 }
 
-static void reed_task(void* data)
+static void vCalcRideParamsOnISRTask(void* data)
 {
     printf("[OBC] Start reed switch task!\n");
 
     for(;;) {
         if(xQueueReceive(reed_evt_queue, &rideParams.rotationTickCount, portMAX_DELAY)) {
             // TODO create buffer for reed time impulses before calculating time and speed
+            // TODO block rideParams while calculating?
+            rideParams.moving = true;
             rideParams.rotations++;
             rideParams.msBetweenRotationTicks = ((int) rideParams.rotationTickCount - (int) rideParams.prevRotationTickCount) * (int) portTICK_RATE_MS;
             rideParams.speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) rideParams.msBetweenRotationTicks / 3600000 ); //km/h
@@ -97,10 +110,10 @@ void vInitPcd8544Screen() {
 }
 
 void vInitTasks() {
-    xTaskCreate(&blink_task, "blink_task", 2048, NULL, 5, NULL);
-    xTaskCreate(&check_status, "check_status_task", 2048, NULL, 3, NULL);
-    xTaskCreate(&reed_task, "reed_task", 2048, NULL, 2, NULL);  
-    xTaskCreate(&vScreenRefresh, "refresh_screen", 2048, NULL, 1, NULL);
+    xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
+    xTaskCreate(&vRideStatusIntervalCheckTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
+    xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 2, NULL);  
+    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 1, NULL);
 }
 
 void vAttachInterrupts() {

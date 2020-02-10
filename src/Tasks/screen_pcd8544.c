@@ -2,9 +2,8 @@
 #include "freeRTOS/task.h"
 #include "pcd8544.h"
 
-
-#define REFRESH_RATE_MS 500
-void vScreenRefresh(void* data) {
+// FIXME add better line clearing
+void vScreenRefreshTask(void* data) {
     printf("[OBC] Init screen refresh task\n");
 
     while(true) {
@@ -12,6 +11,8 @@ void vScreenRefresh(void* data) {
         
         vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
         // TODO add mutual exclusion for reading rideParams?
+        pcd8544_set_pos(0, 0);
+        pcd8544_puts("              ");
         pcd8544_set_pos(0, 0);
         pcd8544_printf("Speed: %0.2f",  rideParams.speed);
         pcd8544_set_pos(0, 1);
@@ -21,11 +22,9 @@ void vScreenRefresh(void* data) {
         pcd8544_set_pos(0, 3);
         pcd8544_printf("%d",  rideParams.rotations);
         pcd8544_set_pos(0, 4);
-        // FIXME add better line clearing
         pcd8544_puts("              ");
         pcd8544_set_pos(0, 4);
         pcd8544_printf("DiffMS: %d",  rideParams.msBetweenRotationTicks);
         pcd8544_sync_and_gc();
     }
-
 }
