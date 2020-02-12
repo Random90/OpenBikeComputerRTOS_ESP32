@@ -1,7 +1,11 @@
 #include "screen_pcd8544.h"
 #include "freeRTOS/task.h"
 #include "pcd8544.h"
-
+// TODO replace pcd8544 library with universal U8g2 library with ESP32 IDF port
+// https://github.com/olikraus/u8g2/wiki/u8g2reference#carduino-example
+// https://github.com/olikraus/u8g2/issues/187
+// https://www.youtube.com/watch?v=MipOGBStBbI
+// https://github.com/nkolban/esp32-snippets/tree/master/hardware/displays/U8G2
 // FIXME add better line clearing
 void vScreenRefreshTask(void* data) {
     printf("[OBC] Init screen refresh task\n");
