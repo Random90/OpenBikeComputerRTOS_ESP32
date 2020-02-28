@@ -1,7 +1,7 @@
 #ifndef SCREEN_PCD8544
 #define SCREEN_PCD8544
 /* ^^ these are the include guards */
-#include "obc.h"
+#include "../obc.h"
 
 
 #define REFRESH_RATE_MS 500
