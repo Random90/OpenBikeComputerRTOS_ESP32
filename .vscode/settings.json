@@ -11,6 +11,8 @@
     "files.associations": {
         "task.h": "c",
         "sdkconfig.h": "c",
-        "pcd8544.h": "c"
+        "pcd8544.h": "c",
+        "screen_pcd8544.h": "c",
+        "settings.h": "c"
     }
 } 

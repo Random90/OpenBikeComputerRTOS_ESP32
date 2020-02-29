@@ -3,7 +3,6 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
-#include "driver/spi_common.h"
 
 #include "sdkconfig.h"
 #include "settings.h"
@@ -13,10 +12,10 @@
 
 
 //hardware setup
-// pcd8544_config_t config = {
-//         .spi_host = HSPI_HOST,
-//         .is_backlight_common_anode = false,
-// };
+pcd8544_config_t config = {
+        .spi_host = HSPI_HOST,
+        .is_backlight_common_anode = false,
+};
 // RTOS specific variables
 static xQueueHandle reed_evt_queue = NULL;
 
@@ -99,20 +98,20 @@ static void IRAM_ATTR vReedISR(void* arg) {
     xQueueSendFromISR(reed_evt_queue, &xLastReedTickCount, NULL);
 }
 
-// void vInitPcd8544Screen() {
-//     printf("[OBC] Init pcd8544 screen\n");
-//     pcd8544_init(&config);
-//     pcd8544_set_backlight(true);
-//     pcd8544_clear_display();
-//     pcd8544_finalize_frame_buf();
-//     pcd8544_sync_and_gc();
-// }
+void vInitPcd8544Screen() {
+    printf("[OBC] Init pcd8544 screen\n");
+    pcd8544_init(&config);
+    pcd8544_set_backlight(true);
+    pcd8544_clear_display();
+    pcd8544_finalize_frame_buf();
+    pcd8544_sync_and_gc();
+}
 
 void vInitTasks() {
     xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
     xTaskCreate(&vRideStatusIntervalCheckTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
     xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 2, NULL);  
-    //xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 1, NULL);
+    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 1, NULL);
 }
 
 void vAttachInterrupts() {
@@ -139,7 +138,7 @@ void app_main()
     // TODO use ESP_LOGI?
     printf("[OBC] IDF version: %s\n",esp_get_idf_version());
     printf("[OBC] Initializing \n");
-    //vInitPcd8544Screen();
+    vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
     printf("[OBC] Init reed queue\n");
