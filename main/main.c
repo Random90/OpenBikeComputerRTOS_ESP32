@@ -10,13 +10,21 @@
 #include "obc.h"
 
 #include "Tasks/screen_pcd8544.h"
+#include <u8g2.h>
+#include "u8g2_esp32_hal.h"
 
 
 //hardware setup
-// pcd8544_config_t config = {
-//         .spi_host = HSPI_HOST,
-//         .is_backlight_common_anode = false,
-// };
+// TODO move to ext file
+// pcd8544 screen
+#define PCD_PIN_CLK 14
+#define PCD_PIN_MOSI 12 // DIN
+#define PCD_PIN_RESET 4
+#define PCD_PIN_DC 25
+#define PCD_PIN_CS 15
+#define PCD_PIN_BL 16
+u8g2_t u8g2;
+
 // RTOS specific variables
 static xQueueHandle reed_evt_queue = NULL;
 
@@ -99,20 +107,35 @@ static void IRAM_ATTR vReedISR(void* arg) {
     xQueueSendFromISR(reed_evt_queue, &xLastReedTickCount, NULL);
 }
 
-// void vInitPcd8544Screen() {
-//     printf("[OBC] Init pcd8544 screen\n");
-//     pcd8544_init(&config);
-//     pcd8544_set_backlight(true);
-//     pcd8544_clear_display();
-//     pcd8544_finalize_frame_buf();
-//     pcd8544_sync_and_gc();
-// }
+void vInitPcd8544Screen() {
+    printf("[OBC] Init pcd8544 screen\n");
+    gpio_pad_select_gpio(PCD_PIN_BL);
+    gpio_set_direction(PCD_PIN_BL, GPIO_MODE_OUTPUT);
+    gpio_set_level(PCD_PIN_BL, 1);
+    u8g2_esp32_hal_t u8g2_esp32_hal = U8G2_ESP32_HAL_DEFAULT;
+	u8g2_esp32_hal.clk   = PCD_PIN_CLK;
+	u8g2_esp32_hal.mosi  = PCD_PIN_MOSI;
+	u8g2_esp32_hal.cs    = PCD_PIN_CS;
+	u8g2_esp32_hal.dc    = PCD_PIN_DC;
+	u8g2_esp32_hal.reset = PCD_PIN_RESET;
+	u8g2_esp32_hal_init(u8g2_esp32_hal);
+
+    u8g2_Setup_pcd8544_84x48_f(&u8g2, U8G2_R0, u8x8_byte_4wire_sw_spi, u8g2_esp32_gpio_and_delay_cb);
+    u8g2_InitDisplay(&u8g2);
+    u8g2_SetPowerSave(&u8g2, 0);
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
+    u8g2_DrawBox(&u8g2, 10,20, 20, 30);
+    u8g2_DrawStr(&u8g2, 0,15,"Hello World!");
+    u8g2_SendBuffer(&u8g2);
+    //TODO backlight usage?
+}
 
 void vInitTasks() {
     xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
     xTaskCreate(&vRideStatusIntervalCheckTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
     xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 2, NULL);  
-    //xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 1, NULL);
+    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 1, NULL);
 }
 
 void vAttachInterrupts() {
@@ -139,7 +162,7 @@ void app_main()
     // TODO use ESP_LOGI?
     printf("[OBC] IDF version: %s\n",esp_get_idf_version());
     printf("[OBC] Initializing \n");
-    //vInitPcd8544Screen();
+    vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
     printf("[OBC] Init reed queue\n");

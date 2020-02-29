@@ -14,6 +14,9 @@ void vScreenRefreshTask(void* data) {
         TickType_t xLastWakeTime = xTaskGetTickCount();
         
         vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
+        u8g2_DrawBox(&u8g2, 10,20, 20, 30);
+        u8g2_DrawStr(&u8g2, 0,15,"Hello World!");
+        u8g2_SendBuffer(&u8g2);
         // TODO add mutual exclusion for reading rideParams?
         // pcd8544_set_pos(0, 0);
         // pcd8544_puts("              ");

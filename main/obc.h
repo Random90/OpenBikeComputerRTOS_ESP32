@@ -12,5 +12,4 @@
     float speed;
     float distance;
  } ride_params_t;
-
 #endif
