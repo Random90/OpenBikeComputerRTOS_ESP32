@@ -2,6 +2,8 @@
 #define OBC_CORE
 
 #include "freertos/FreeRTOS.h"
+#include "driver/spi_common.h"
+#include "pcd8544.h"
 // OBC specific global structs
  typedef struct {
     bool moving;

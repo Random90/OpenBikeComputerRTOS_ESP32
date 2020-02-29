@@ -1,0 +1,18 @@
+{
+    "C_Cpp.clang_format_style": "Visual Studio",
+    "editor.formatOnSave": false,
+    "[cpp]": {
+        "editor.quickSuggestions": true
+    },
+    "[c]": {
+        "editor.quickSuggestions": true
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Enabled",
+    "files.associations": {
+        "task.h": "c",
+        "sdkconfig.h": "c",
+        "pcd8544.h": "c",
+        "screen_pcd8544.h": "c",
+        "settings.h": "c"
+    }
+} 

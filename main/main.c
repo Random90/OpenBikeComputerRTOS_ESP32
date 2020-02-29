@@ -3,10 +3,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
-#include "driver/spi_common.h"
 
 #include "sdkconfig.h"
-#include "pcd8544.h"
 #include "settings.h"
 #include "obc.h"
 

@@ -1,5 +1,4 @@
-.pio
-.pioenvs
-.piolibdeps
-test/MockReedSwitch/.*
-.vscode
+build/
+sdkconfig
+sdkconfig.old
+.vscode/
