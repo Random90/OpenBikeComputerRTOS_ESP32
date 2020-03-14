@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "driver/spi_common.h"
+#include "esp_log.h"
 #include "pcd8544.h"
 // OBC specific global structs
  typedef struct {

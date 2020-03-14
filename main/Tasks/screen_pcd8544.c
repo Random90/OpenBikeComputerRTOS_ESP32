@@ -1,8 +1,9 @@
 #include "screen_pcd8544.h"
 #include "freertos/task.h"
+static const char* TAG = "PCD8544_TASK";
 // FIXME add better line clearing
 void vScreenRefreshTask(void* data) {
-    printf("[OBC] Init screen refresh task\n");
+    ESP_LOGI(TAG, "[OBC] Init screen refresh task");
 
     while(true) {
         TickType_t xLastWakeTime = xTaskGetTickCount();

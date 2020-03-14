@@ -18,6 +18,7 @@ pcd8544_config_t config = {
 };
 // RTOS specific variables
 static xQueueHandle reed_evt_queue = NULL;
+static const char* TAG = "Main";
 
 // OBC global ride params
 ride_params_t rideParams = {
@@ -31,7 +32,7 @@ void vBlinkerTask(void *pvParameter)
 {
     portTickType xLastWakeTime;
 
-    printf("[OBC] Initialize blinking\n");
+    ESP_LOGI(TAG, "[OBC] Initialize blinking");
 
     /* specify that the function of a given pin 
     should be that of GPIO as opposed to some other function 
@@ -55,7 +56,7 @@ static void vRideStatusIntervalCheckTask(void *arg) {
     TickType_t currentTickCount;
     int timeInactive;
 
-    printf("[OBC] Starting ride status watchdog task\n");
+    ESP_LOGI(TAG, "[OBC] Starting ride status watchdog task");
 
     while(true) {
         msg_count = uxQueueMessagesWaitingFromISR(reed_evt_queue);
@@ -63,7 +64,7 @@ static void vRideStatusIntervalCheckTask(void *arg) {
         timeInactive = ((int) currentTickCount - (int) rideParams.prevRotationTickCount) * (int) portTICK_RATE_MS;
 
         if(rideParams.moving && !msg_count && timeInactive > RIDE_TIMEOUT_MS) {
-            printf("[RIDE_STATUS] Stopped moving\n");
+            ESP_LOGI(TAG, "[RIDE_STATUS] Stopped moving");
             rideParams.speed = 0.0;
             rideParams.msBetweenRotationTicks = 0;
             rideParams.moving = false;
@@ -75,7 +76,7 @@ static void vRideStatusIntervalCheckTask(void *arg) {
 
 static void vCalcRideParamsOnISRTask(void* data)
 {
-    printf("[OBC] Start reed switch task!\n");
+    ESP_LOGI(TAG, "[OBC] Start reed switch task!");
 
     for(;;) {
         if(xQueueReceive(reed_evt_queue, &rideParams.rotationTickCount, portMAX_DELAY)) {
@@ -87,7 +88,7 @@ static void vCalcRideParamsOnISRTask(void* data)
             rideParams.speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) rideParams.msBetweenRotationTicks / 3600000 ); //km/h
             rideParams.distance = (float)rideParams.rotations * (float)CIRCUMFERENCE/1000000;
             rideParams.prevRotationTickCount = rideParams.rotationTickCount;    
-            printf("[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f\n", rideParams.rotations, rideParams.speed, rideParams.msBetweenRotationTicks, rideParams.distance);        
+            ESP_LOGI(TAG, "[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f", rideParams.rotations, rideParams.speed, rideParams.msBetweenRotationTicks, rideParams.distance);        
         }
     }
 }
@@ -99,7 +100,7 @@ static void IRAM_ATTR vReedISR(void* arg) {
 }
 
 void vInitPcd8544Screen() {
-    printf("[OBC] Init pcd8544 screen\n");
+    ESP_LOGI(TAG, "[OBC] Init pcd8544 screen");
     pcd8544_init(&config);
     pcd8544_set_backlight(true);
     pcd8544_clear_display();
@@ -115,7 +116,7 @@ void vInitTasks() {
 }
 
 void vAttachInterrupts() {
-    printf("[OBC] Attaching reed switch interrupt\n");
+    ESP_LOGI(TAG, "[OBC] Attaching reed switch interrupt");
     // create queue for the reed interrupt
     reed_evt_queue = xQueueCreate(10, sizeof(uint32_t));
 
@@ -136,11 +137,11 @@ void vAttachInterrupts() {
 void app_main()
 {
     // TODO use ESP_LOGI?
-    printf("[OBC] IDF version: %s\n",esp_get_idf_version());
-    printf("[OBC] Initializing \n");
+    ESP_LOGI(TAG, "[OBC] IDF version: %s",esp_get_idf_version());
+    ESP_LOGI(TAG, "[OBC] Initializing");
     vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
-    printf("[OBC] Init reed queue\n");
-    printf("[OBC] Startup complete \n");
+    ESP_LOGI(TAG, "[OBC] Init reed queue");
+    ESP_LOGI(TAG, "[OBC] Startup complete");
 }
