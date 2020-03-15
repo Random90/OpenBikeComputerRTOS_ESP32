@@ -5,6 +5,7 @@
 
 
 #define REFRESH_RATE_MS 500
+#define POWER_SAVE_DELAY_MS 10000
 
 extern ride_params_t rideParams;
 
