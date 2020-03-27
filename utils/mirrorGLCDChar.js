@@ -2,19 +2,22 @@ string = "00000000,00000000,00000000,00000000,11100000,00000001,11100000,0000000
 
 const COLUMNS = 2;
 
-let resultStr = '';
 let buffer = [['']];
 let columnsCounter = 0;
 let row = 0;
 
 fillTheBuffer();
 mirrorAllBytes();
+parseColumnsLastRowsFirst();
+rotateBmpTopRight90();
 prependBinarySign();
-printColumnsLastRowsFirst();
-//printRowsFirstColumnsLast();
+const result = asString();
+console.log(result);
+return result;
+
 
 function fillTheBuffer() {
-  for(let i = 0; i < string.length; i++) {
+  for (let i = 0; i < string.length; i++) {
     if (string[i] === ',') {
       if (columnsCounter === COLUMNS - 1) {
         columnsCounter = 0;
@@ -39,34 +42,17 @@ function mirrorAllBytes() {
 }
 
 function prependBinarySign() {
-  [...Array(row + 1)].forEach((_, i) => {
-    [...Array(COLUMNS)].forEach((_, j) => {
-      buffer[i][j] = '0b' + buffer[i][j];
-    });
-  });
+  buffer = buffer.map((value) => '0b' + value);
 }
 
-function printColumnsLastRowsFirst() {
-  
-    for (let j = COLUMNS - 1; j >= 0; j--) {
-      [...Array(row)].forEach((_, i) => {
-        resultStr += buffer[i][j]  + (i === row - 1 ? '' : ',');
-        resultStr += '\n';
-      });
-      resultStr += '\n';
-    }
-    
-}
-
-function printRowsFirstColumnsLast() {
-  
-  [...Array(row + 1)].forEach((_, i) => {
-    [...Array(COLUMNS)].forEach((_, j) => {
-      resultStr += buffer[i][j]  + (i === row && j === COLUMNS - 1 ? '' : ',');
-      resultStr += '\n';
+function parseColumnsLastRowsFirst() {
+  let newBuffer = [];
+  for (let j = COLUMNS - 1; j >= 0; j--) {
+    [...Array(row)].forEach((_, i) => {
+      newBuffer.push(buffer[i][j]);
     });
-  });
-  
+  }
+  buffer = newBuffer;
 }
 
 function mirrorByte(byteStr) {
@@ -76,5 +62,31 @@ function mirrorByte(byteStr) {
   }
   return buffer;
 }
-console.log(resultStr);
-return resultStr;
+
+// use bitwise operators?
+function rotateBmpTopRight90() {
+  let rotatedBuffer = [];
+  let rotatedRowIdx = 0;
+  for (let bitIdx = 7; bitIdx >= 0; bitIdx--) {
+    buffer.forEach((byteStr, rowIdx) => {
+      if (!rotatedBuffer[rotatedRowIdx]) {
+        rotatedBuffer[rotatedRowIdx] = '';
+      }
+      // TODO calculate rotated size and append empty bytes?
+      rotatedBuffer[rotatedRowIdx] += byteStr[bitIdx];
+      if (rotatedBuffer[rotatedRowIdx].length === 8) {
+        rotatedRowIdx++;
+      }
+    })
+  }
+
+  buffer = rotatedBuffer;
+}
+
+function asString() {
+  let resultStr = '';
+  buffer.forEach((byte, i) => {
+    resultStr += byte + (i === buffer.length - 1 ? ' ' : ',\n');
+  })
+  return resultStr;
+}
