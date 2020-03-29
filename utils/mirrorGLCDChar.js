@@ -8,8 +8,8 @@ let row = 0;
 
 fillTheBuffer();
 mirrorAllBytes();
+rotateBmpClockWise90();
 parseColumnsLastRowsFirst();
-rotateBmpTopRight90();
 prependBinarySign();
 const result = asString();
 console.log(result);
@@ -64,21 +64,33 @@ function mirrorByte(byteStr) {
 }
 
 // use bitwise operators?
-function rotateBmpTopRight90() {
+function rotateBmpClockWise90() {
   let rotatedBuffer = [];
   let rotatedRowIdx = 0;
-  for (let bitIdx = 7; bitIdx >= 0; bitIdx--) {
-    buffer.forEach((byteStr, rowIdx) => {
-      if (!rotatedBuffer[rotatedRowIdx]) {
-        rotatedBuffer[rotatedRowIdx] = '';
-      }
-      // TODO calculate rotated size and append empty bytes?
-      rotatedBuffer[rotatedRowIdx] += byteStr[bitIdx];
-      if (rotatedBuffer[rotatedRowIdx].length === 8) {
-        rotatedRowIdx++;
-      }
+  let byteCache = [];
+  let bitIdx = 0;
+  [...Array(COLUMNS)].forEach((_, j) => {
+    buffer.forEach((byteArr) => {
+        
+        if (byteCache.length < 8) {
+          // cache next 8 bytes
+          byteCache.push(byteArr[j]);
+        } else {
+          // TODO add empty bits of not mod8
+          //rotate cashed bytes clockwise
+          while(bitIdx < 8) {
+            byteCache.forEach((byteStr, cachedIdx) => {
+              if (!rotatedBuffer[cachedIdx]) {
+                rotatedBuffer[cachedIdx] = '';
+              }
+              rotatedBuffer[cachedIdx] = byteStr[bitIdx] + rotatedBuffer[cachedIdx];
+            });
+            bitIdx++;
+          }
+        }        
     })
-  }
+  });
+ 
 
   buffer = rotatedBuffer;
 }
