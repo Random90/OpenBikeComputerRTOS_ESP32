@@ -66,31 +66,37 @@ function mirrorByte(byteStr) {
 // use bitwise operators?
 function rotateBmpClockWise90() {
   let rotatedBuffer = [];
-  let rotatedRowIdx = 0;
   let byteCache = [];
-  let bitIdx = 0;
-  [...Array(COLUMNS)].forEach((_, j) => {
-    buffer.forEach((byteArr) => {
-        
-        if (byteCache.length < 8) {
-          // cache next 8 bytes
-          byteCache.push(byteArr[j]);
-        } else {
-          // TODO add empty bits of not mod8
-          //rotate cashed bytes clockwise
-          while(bitIdx < 8) {
-            byteCache.forEach((byteStr, cachedIdx) => {
-              if (!rotatedBuffer[cachedIdx]) {
-                rotatedBuffer[cachedIdx] = '';
-              }
-              rotatedBuffer[cachedIdx] = byteStr[bitIdx] + rotatedBuffer[cachedIdx];
-            });
-            bitIdx++;
-          }
-        }        
-    })
-  });
- 
+
+  let rotationMap = new Array[COLUMNS];
+  rotationMap.fill(0);
+  // TODO use map to switch columns after 8 bytes
+  // take first 8 bytes from first column
+  // rotate, update rotationMap
+  // switch column and take first 8 bytes
+  // rotate, update rotationMap
+  // repeat until every entry on the array is > rows - switches mod 8
+  // add zeroes for calculated difference from above
+  // size of rotated bitmap = oldCols * 8bits [16] x nr of repeats on each col [3]
+  // pushing to rotationBuffer is sufficient, resulting 1d array considers pcd library rendering algorithm
+
+
+  // if (byteCache.length < 8) {
+  //   // cache next 8 bytes
+  //   byteCache.push(byteArr[j]);
+  // }
+
+  //   byteCache.forEach((byteStr, cachedIdx) => {
+  //     for (let bitIdx = 0; bitIdx < 8; bitIdx++) {
+  //       if (!rotatedBuffer[bitIdx]) {
+  //         rotatedBuffer[bitIdx] = '';
+  //       }
+  //       rotatedBuffer[bitIdx] = byteStr[bitIdx] + rotatedBuffer[bitIdx];
+  //     }
+  //   });
+
+
+
 
   buffer = rotatedBuffer;
 }
