@@ -1,4 +1,8 @@
-string = "00000000,00000000,00000000,00000000,11100000,00000001,11100000,00000001,11100000,00000001,11111110,00000001,11111110,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11111110,00011111,11111110,00011111,00000000,00000000,00000000,00000000";
+/*
+Use this script to convert microC array generated in GLCD font creator to proper C binary array compatibile with pcd8544 display driver library
+*/
+
+string = "00000000,00000000,00000000,00000000,11100000,00000001,11100000,00000001,11100000,00000001,11111110,00000001,11111110,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11100000,00000001,11111110,00011111,11111110,00011111,00000000,00000000,00000000,00000000,00000000,00000000";
 
 const COLUMNS = 2;
 
@@ -9,7 +13,6 @@ let row = 0;
 fillTheBuffer();
 mirrorAllBytes();
 rotateBmpClockWise90();
-parseColumnsLastRowsFirst();
 prependBinarySign();
 const result = asString();
 console.log(result);
@@ -45,16 +48,6 @@ function prependBinarySign() {
   buffer = buffer.map((value) => '0b' + value);
 }
 
-function parseColumnsLastRowsFirst() {
-  let newBuffer = [];
-  for (let j = COLUMNS - 1; j >= 0; j--) {
-    [...Array(row)].forEach((_, i) => {
-      newBuffer.push(buffer[i][j]);
-    });
-  }
-  buffer = newBuffer;
-}
-
 function mirrorByte(byteStr) {
   let buffer = '';
   for (let i = 7; i >= 0; i--) {
@@ -62,15 +55,10 @@ function mirrorByte(byteStr) {
   }
   return buffer;
 }
-
+// TODO fill buffer columns if row mod 8 > 0 to keep whole image
+// now it will be cropped due to library limitations
 // use bitwise operators?
 function rotateBmpClockWise90() {
-  let rotatedBuffer = [];
-  let byteCache = [];
-
-  let rotationMap = new Array[COLUMNS];
-  rotationMap.fill(0);
-  // TODO use map to switch columns after 8 bytes
   // take first 8 bytes from first column
   // rotate, update rotationMap
   // switch column and take first 8 bytes
@@ -79,26 +67,35 @@ function rotateBmpClockWise90() {
   // add zeroes for calculated difference from above
   // size of rotated bitmap = oldCols * 8bits [16] x nr of repeats on each col [3]
   // pushing to rotationBuffer is sufficient, resulting 1d array considers pcd library rendering algorithm
-
-
-  // if (byteCache.length < 8) {
-  //   // cache next 8 bytes
-  //   byteCache.push(byteArr[j]);
-  // }
-
-  //   byteCache.forEach((byteStr, cachedIdx) => {
-  //     for (let bitIdx = 0; bitIdx < 8; bitIdx++) {
-  //       if (!rotatedBuffer[bitIdx]) {
-  //         rotatedBuffer[bitIdx] = '';
-  //       }
-  //       rotatedBuffer[bitIdx] = byteStr[bitIdx] + rotatedBuffer[bitIdx];
-  //     }
-  //   });
-
-
-
-
-  buffer = rotatedBuffer;
+  let colIdx = 0;
+  let byteBuffer = [];
+  let rotatedBlockBuffer = [];
+  for (let i = 0; i < buffer.length; i++) {
+    // load 8 bytes from buffer
+    byteBuffer.push(buffer[i][colIdx]);
+    if (i % 8 === 7) {
+      // rotate loaded column and push into final array
+      byteBuffer.forEach((byteStr, byteIdx) => {
+        for (let bitIdx = 0; bitIdx < 8; bitIdx++) {
+          if (!rotatedBlockBuffer[bitIdx]) {
+            rotatedBlockBuffer[bitIdx] = '';
+          }
+          rotatedBlockBuffer[bitIdx] = byteStr[bitIdx] + rotatedBlockBuffer[bitIdx];
+        }
+      });
+      rotatedBitmap = rotatedBitmap.concat(rotatedBlockBuffer);
+      rotatedBlockBuffer = [];
+      byteBuffer = [];
+      // switch buffer column
+      if (colIdx < COLUMNS - 1) {
+        colIdx++;
+        i -= 8;
+      } else {
+        colIdx = 0;
+      }
+    }
+  }
+  buffer = rotatedBitmap;
 }
 
 function asString() {
