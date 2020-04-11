@@ -13,6 +13,7 @@
         "sdkconfig.h": "c",
         "pcd8544.h": "c",
         "screen_pcd8544.h": "c",
-        "settings.h": "c"
+        "settings.h": "c",
+        "pcd8544_font_utils.h": "c"
     }
 } 

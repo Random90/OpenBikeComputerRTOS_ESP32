@@ -1,8 +1,10 @@
 #ifndef PCD8544_FONT16X24
 #define PCD8544_FONT16X24
 #include <stdint.h>
-// Big numbers from 0 to 1 only
-static uint8_t fontDetermination[10][44] = {
+
+#define CHAR_SIZE 48
+// Big numbers from 0 to 9 only
+static uint8_t fontDetermination[10][CHAR_SIZE] = {
     // char 0
     {
         0b00000000,

@@ -8,7 +8,7 @@
 #include "settings.h"
 #include "obc.h"
 
-#include "Tasks/screen_pcd8544.h"
+#include "Tasks/screen_pcd8544/screen_pcd8544.h"
 
 
 //hardware setup
