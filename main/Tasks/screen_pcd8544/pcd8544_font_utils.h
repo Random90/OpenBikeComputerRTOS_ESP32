@@ -3,12 +3,11 @@
 
 #include <pcd8544_font16x24.h>
 
-struct two_digits_ptrs {
-    uint8_t (*first)[CHAR_SIZE];
-    uint8_t (*second)[CHAR_SIZE];
-};
+typedef struct aa {
+    uint8_t *first, *second;
+} two_digits_ptrs;
 
 // get struct containing two pointers to arrays of bytes representing an char from selected font
-struct two_digits_ptrs *getChars(int value);
+two_digits_ptrs *getChars(int value);
 
 #endif

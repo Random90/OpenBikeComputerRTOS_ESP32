@@ -6,7 +6,7 @@
 #include "esp_log.h"
 #include "pcd8544.h"
 // OBC specific global structs
- typedef struct {
+ typedef struct ride_params_t {
     bool moving;
     uint32_t rotations;
     portTickType prevRotationTickCount;
