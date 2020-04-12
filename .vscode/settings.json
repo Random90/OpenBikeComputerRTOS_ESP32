@@ -16,6 +16,7 @@
         "settings.h": "c",
         "pcd8544_font_utils.h": "c",
         "freertos.h": "c",
-        "obc.h": "c"
+        "obc.h": "c",
+        "stdlib.h": "c"
     }
 } 
