@@ -1,26 +1,32 @@
 #include <pcd8544_font_utils.h>
 #include "esp_log.h"
 
+#define TAG "PCD8544"
+
 uint8_t **getSpeedChars(float *speed) {
     // lifetime array of pointers to chars
     static uint8_t *char_arr[4];
     // create buffer for converted float
-    char buffer[4];
+    char buffer1[5];
+    char buffer2[6];
     // convert float to string
-    int size = snprintf(buffer, sizeof buffer, "%0.2f", *speed);
+    int size = snprintf(buffer1, 4,"%0.2f", *speed);
     // pad str with 0 if speed lower than 10
-    if (size < sizeof(buffer)) {
-        buffer[0] = '0';
+    // FIXME optimize
+    if (size < sizeof(buffer1)) {
+        sprintf(buffer2, "0%s", buffer1);
+    } else {
+        sprintf(buffer2, "%s", buffer1);
     }
-    for (int i = 0; i<=sizeof buffer; i++) {
+    ESP_LOGI(TAG, "%s", buffer1);
+    for (int i = 0; i <= 4; i++) {
         // convert to int and fill char_arr with pointers to big font characters
-        if (buffer[i] != '.') {
-            char single_char_buf[1] = {buffer[i]};
+        if (buffer2[i] != '.') {
+            char single_char_buf[1] = {buffer2[i]};
             char_arr[i] = fontDetermination[atoi(single_char_buf)];
-            ESP_LOGI("TEST","%d, %d %p", atoi(single_char_buf),i,char_arr[i]);
         } else {
-            // TODO assign dot
-            char_arr[i] = fontDetermination[0];
+            // TODO add dot? drewinf rectangle is buggy
+            continue;
         }
         
         

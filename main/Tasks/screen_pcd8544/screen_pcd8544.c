@@ -28,12 +28,13 @@ static void printDataToScreen() {
     //two_digits_ptrs *chars = getSpeedChars(&rideParams.speed);
     uint8_t **chars = getSpeedChars(&rideParams.speed);
     pcd8544_clear_display();
-    ESP_LOGI("DRAW","%p %p", chars, chars[0]);
+    pcd8544_set_pos(0, 0);
     pcd8544_draw_bitmap(chars[0], 16, 3, false);
-    pcd8544_set_pos(24, 0);
+    pcd8544_set_pos(16, 0);
     pcd8544_draw_bitmap(chars[1], 16, 3, false);
-    pcd8544_set_pos(48, 0);
-    //pcd8544_draw_bitmap(chars[2], 16, 3, false);
+    pcd8544_draw_rectangle(31,19,33,21);
+    pcd8544_set_pos(33, 0);
+    pcd8544_draw_bitmap(chars[3], 16, 3, false);
     pcd8544_finalize_frame_buf();
     pcd8544_sync_and_gc();
 }
