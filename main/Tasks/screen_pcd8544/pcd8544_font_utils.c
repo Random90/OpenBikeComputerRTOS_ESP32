@@ -1,8 +1,6 @@
 #include <pcd8544_font_utils.h>
-#include <string.h>
 
 #include "esp_log.h"
-#define TAG "PCD8544"
 
 uint8_t **getSpeedChars(float *speed) {
     // lifetime array of pointers to chars
@@ -19,7 +17,7 @@ uint8_t **getSpeedChars(float *speed) {
     } else {
         snprintf(buffer, 10, "%d.%d", speedInt, fraction);
     }
-    ESP_LOGI(TAG, "hmmm %s", buffer);
+
     for (int i = 0; i <= 4; i++) {
         // convert to int and fill char_arr with pointers to big font characters
         if (buffer[i] != '.') {
