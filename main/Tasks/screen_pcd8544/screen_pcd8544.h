@@ -6,7 +6,14 @@
 #define REFRESH_RATE_MS 500
 #define POWER_SAVE_DELAY_MS 10000
 
-#define FONT_ROWS 44
+#define SCREEN_0 (1 << 0) // 1
+#define SCREEN_1 (1 << 1) // 2
+#define SCREEN_2 (1 << 2) // 4
+#define SCREEN_3 (1 << 3) // 8
+#define SCREEN_4 (1 << 4) // 16
+#define SCREEN_5 (1 << 5) // 32
+#define SCREEN_6 (1 << 6) // 64
+#define SCREEN_7 (1 << 7) // 128
 
 extern ride_params_t rideParams;
 

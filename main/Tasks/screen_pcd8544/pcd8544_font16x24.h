@@ -3,8 +3,8 @@
 #include <stdint.h>
 
 #define CHAR_SIZE 48
-// Big numbers from 0 to 9 only
-static uint8_t fontDetermination[10][CHAR_SIZE] = {
+// Big numbers from 0 to 9 only (pcd size is 16 x 3)
+static uint8_t fontDetermination[11][CHAR_SIZE] = {
     // char 0
     {
         0b00000000,
@@ -504,6 +504,22 @@ static uint8_t fontDetermination[10][CHAR_SIZE] = {
         0b00000011,
         0b00000011,
         0b00000000,
-        0b00000000}};
+        0b00000000
+        },
+        // dot char with padding (3x24) (pcd 3x3)
+        {
+            0b00000000,
+            0b00000000,
+            0b00000000,
+
+            0b00000000,
+            0b00000000,
+            0b00000000,
+
+            0b00111000,
+            0b00111000,
+            0b00111000,
+
+        }};
 
 #endif /* PCD8544_FONT16X24 */
