@@ -7,17 +7,27 @@ bool bToogle = false;
 uint8_t screenFlags = 0b00000001; // initial value, main screen enabled
 
 static void drawMainScreen() {
-    
-    uint8_t **chars = getSpeedChars(&rideParams.speed);
     pcd8544_clear_display();
+    // draw speed
+    uint8_t **speedChars = getSpeedChars(&rideParams.speed);
     pcd8544_set_pos(0, 0);
-    pcd8544_draw_bitmap(chars[0], 16, 3, false);
+    pcd8544_draw_bitmap(speedChars[0], 16, 3, false);
     pcd8544_set_pos(16, 0);
-    pcd8544_draw_bitmap(chars[1], 16, 3, false);
+    pcd8544_draw_bitmap(speedChars[1], 16, 3, false);
     pcd8544_set_pos(32, 0);
-     pcd8544_draw_bitmap(chars[2], 3, 3, false);
+    pcd8544_draw_bitmap(speedChars[2], 3, 3, false);
     pcd8544_set_pos(35, 0);
-    pcd8544_draw_bitmap(chars[3], 16, 3, false);
+    pcd8544_draw_bitmap(speedChars[3], 16, 3, false);
+    // draw distance
+    uint8_t **distanceChars = getDistanceChars(&rideParams.distance);
+    for (int i = 0; i < 5; i++) {
+        if (distanceChars[i] == NULL) {
+            break;
+        }
+        pcd8544_set_pos(i * 16, 3);
+        pcd8544_draw_bitmap(distanceChars[i], 16, 3, false);
+    }
+
     pcd8544_finalize_frame_buf();
     pcd8544_sync_and_gc();
 }
@@ -47,6 +57,7 @@ static void drawSimpleDetailsScreen() {
 
 // render one of the screens, use bitwise flags
 static void screenRenderer(TickType_t *lastWakeTime) {
+    // @TODO fix trans_queue_size reaches PCD8544_TRANS_QUEUE_SIZE(32). Is this library issue of blokcing task mid-render or something? 
     ESP_LOGI(TAG, "Renderer last wake time %d", (int)lastWakeTime);
     drawMainScreen();
 }

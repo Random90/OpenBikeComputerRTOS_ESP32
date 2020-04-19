@@ -1,7 +1,6 @@
 #include <pcd8544_font_utils.h>
 
 #include "esp_log.h"
-
 /**
  * @param charArr array of chars to which font data will be passed
  * @param buffer source of text
@@ -13,21 +12,19 @@
 static void fillCharsFromBuffer(uint8_t **charArr, char *buffer, int nrOfChars) {
     for (int i = 0; i <= nrOfChars; i++) {
         // convert to int and fill charArr with pointers to big font characters
-        if (*buffer != '.') {
+        if (*buffer != '.' && *buffer >= '0' && *buffer <= '9') {
             char single_char_buf[1] = {*buffer};
             *charArr = fontDetermination[atoi(single_char_buf)];
-        } else {
-            // returns dot
+        } else if(*buffer == '.'){
             *charArr = fontDetermination[10];
+        } else {
+            *charArr = NULL;
         }
         buffer++;
         charArr++;
     }
 }
-/**
- * @brief convert bike speed from float to included font char array
- * @return pointer to array of binary characters
- * */
+
 uint8_t **getSpeedChars(float *speed) {
     // lifetime array of pointers to chars
     static uint8_t *charArr[4];
@@ -51,10 +48,16 @@ uint8_t **getSpeedChars(float *speed) {
     fillCharsFromBuffer(charArr, buffer, 4);
     return &charArr;
 }
-/**
- * @brief convert distance measured from float to included font char array
- * @return pointer to array of binary characters
- * */
-// uint8_t **getDistanceChars(float *distance) {
-//     static uint8_t *charArr[4];
-// }
+
+uint8_t **getDistanceChars(float *distance) {
+    static uint8_t *charArr[6];
+    char buffer[10];
+    // @TODO handle distance > 999.9
+    // convert float to int dot int
+    uint8_t distanceInt = *distance;
+    float tempFrac = *distance - distanceInt;
+    uint8_t fraction = (tempFrac * 100);
+    snprintf(buffer, 10, "%d.%d", distanceInt, fraction);
+    fillCharsFromBuffer(charArr, buffer, 10);
+    return &charArr;
+}

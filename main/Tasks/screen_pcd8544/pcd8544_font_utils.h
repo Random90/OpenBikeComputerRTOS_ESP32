@@ -6,7 +6,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// get array containing two pointers to arrays of bytes representing an char from selected font
+/**
+ * @brief convert bike speed from float to included font char array
+ * @return pointer to array of binary characters
+ * */
 uint8_t **getSpeedChars(float *value);
+
+/**
+ * @brief convert distance measured from float to included font char array
+ * @return pointer to array of binary characters
+ * */
+uint8_t **getDistanceChars(float *distance);
 
 #endif
