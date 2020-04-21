@@ -57,7 +57,11 @@ uint8_t **getDistanceChars(float *distance) {
     uint8_t distanceInt = *distance;
     float tempFrac = *distance - distanceInt;
     uint8_t fraction = (tempFrac * 100);
-    snprintf(buffer, 10, "%d.%d", distanceInt, fraction);
+    if(fraction < 10) {
+        snprintf(buffer, 10, "%d.0%d", distanceInt, fraction);
+    } else {
+        snprintf(buffer, 10, "%d.%d", distanceInt, fraction);
+    }
     fillCharsFromBuffer(charArr, buffer, 10);
     return &charArr;
 }
