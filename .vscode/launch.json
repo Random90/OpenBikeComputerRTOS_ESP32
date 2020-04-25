@@ -1,39 +1,32 @@
+// AUTOMATICALLY GENERATED FILE. PLEASE DO NOT MODIFY IT MANUALLY
+
+// PIO Unified Debugger
+//
+// Documentation: https://docs.platformio.org/page/plus/debugging.html
+// Configuration: https://docs.platformio.org/page/projectconf/section_env_debug.html
+
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    {
-        "type": "node",
-        "request": "launch",
-        "name": "NodeJS",
-        "program": "${file}",
-        "skipFiles": [
-            "<node_internals>/**"
-        ]
-    },
         {
-            "name": "GDB",
-            "type": "cppdbg",
+            "type": "platformio-debug",
             "request": "launch",
-            "MIMode": "gdb",
-            "miDebuggerPath": "xtensa-esp32-elf-gdb",
-            "program": "${workspaceFolder}/build/${command:espIdf.getProjectName}.elf",
-            "windows": {
-                "program": "${workspaceFolder}\\build\\${command:espIdf.getProjectName}.elf",
+            "name": "PIO Debug",
+            "executable": "c:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/.pio/build/esp-wrover-kit/firmware.elf",
+            "toolchainBinDir": "C:/Users/gczer/.platformio/packages/toolchain-xtensa32/bin",
+            "preLaunchTask": {
+                "type": "PlatformIO",
+                "task": "Pre-Debug"
             },
-            "cwd": "${workspaceFolder}",
-            "setupCommands": [
-                { "text": "target remote :3333"},
-                { "text": "mon reset halt"},
-                { "text": "thb app_main"},
-                { "text": "flushregs"},
-            ],
-            "externalConsole": false,
-            "logging": {
-                "engineLogging": true
-            },
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "platformio-debug",
+            "request": "launch",
+            "name": "PIO Debug (skip Pre-Debug)",
+            "executable": "c:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/.pio/build/esp-wrover-kit/firmware.elf",
+            "toolchainBinDir": "C:/Users/gczer/.platformio/packages/toolchain-xtensa32/bin",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }
