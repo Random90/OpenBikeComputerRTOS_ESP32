@@ -6,18 +6,33 @@ static const char* TAG = "PCD8544_TASK";
 bool bToogle = false;
 uint8_t screenFlags = 0b00000001; // initial value, main screen enabled
 
+/**
+ * Used to display current speed compared to average as bar on the right side of the screen
+ * */
+static void drawAverageBar(uint8_t percentHeight) {
+    for (int i = 0; i < 2; i++) {
+        pcd8544_draw_line(82 + i, 0 + (48 * percentHeight / 100), 82 + i, 48);
+    }
+}
+
+/**
+ * @warning screen designed for default font
+ * */
 static void drawMainScreen() {
     pcd8544_clear_display();
     uint8_t charRowsArr[6];
     uint8_t currentDrawingPos = 0;
-    // draw speed
+    // draw speed using big chars
     uint8_t **speedChars = getSpeedChars(&rideParams.speed, charRowsArr);
     for (int i = 0; i < 4; i++) {
         pcd8544_set_pos(currentDrawingPos, 0);
-        pcd8544_draw_bitmap(speedChars[i], charRowsArr[i], 3, false);
+        pcd8544_draw_bitmap(speedChars[i], charRowsArr[i], 3, true);
         currentDrawingPos += charRowsArr[i];
     }
-    // draw distance
+
+    pcd8544_draw_line(0, 24, 84, 24);
+
+    // and draw distance
     currentDrawingPos = 0;
     uint8_t **distanceChars = getDistanceChars(&rideParams.distance, charRowsArr);
     for (int i = 0; i < 6; i++) {
@@ -25,11 +40,20 @@ static void drawMainScreen() {
             break;
         }
         pcd8544_set_pos(currentDrawingPos, 3);
-        pcd8544_draw_bitmap(distanceChars[i], charRowsArr[i], 3, false);
+        pcd8544_draw_bitmap(distanceChars[i], charRowsArr[i], 3, true);
         currentDrawingPos += charRowsArr[i];
     }
 
+    drawAverageBar(60);
     pcd8544_finalize_frame_buf();
+    // display some units
+    // prevents screen from breaking, there will be no space on it anyways
+    if(rideParams.distance < 100) {
+        pcd8544_set_pos(currentDrawingPos + 2, 5);
+    }
+    pcd8544_printf("km");
+    pcd8544_set_pos(53, 2); //speed render has constant size
+    pcd8544_printf("km/h");
     pcd8544_sync_and_gc();
 }
 // FIXME add better line clearing
