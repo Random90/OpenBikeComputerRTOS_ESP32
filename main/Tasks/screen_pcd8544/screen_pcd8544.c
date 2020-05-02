@@ -8,24 +8,25 @@ uint8_t screenFlags = 0b00000001; // initial value, main screen enabled
 
 static void drawMainScreen() {
     pcd8544_clear_display();
+    uint8_t charRowsArr[6];
+    uint8_t currentDrawingPos = 0;
     // draw speed
-    uint8_t **speedChars = getSpeedChars(&rideParams.speed);
-    pcd8544_set_pos(0, 0);
-    pcd8544_draw_bitmap(speedChars[0], 16, 3, false);
-    pcd8544_set_pos(16, 0);
-    pcd8544_draw_bitmap(speedChars[1], 16, 3, false);
-    pcd8544_set_pos(32, 0);
-    pcd8544_draw_bitmap(speedChars[2], 3, 3, false);
-    pcd8544_set_pos(35, 0);
-    pcd8544_draw_bitmap(speedChars[3], 16, 3, false);
+    uint8_t **speedChars = getSpeedChars(&rideParams.speed, charRowsArr);
+    for (int i = 0; i < 4; i++) {
+        pcd8544_set_pos(currentDrawingPos, 0);
+        pcd8544_draw_bitmap(speedChars[i], charRowsArr[i], 3, false);
+        currentDrawingPos += charRowsArr[i];
+    }
     // draw distance
-    uint8_t **distanceChars = getDistanceChars(&rideParams.distance);
-    for (int i = 0; i < 5; i++) {
+    currentDrawingPos = 0;
+    uint8_t **distanceChars = getDistanceChars(&rideParams.distance, charRowsArr);
+    for (int i = 0; i < 6; i++) {
         if (distanceChars[i] == NULL) {
             break;
         }
-        pcd8544_set_pos(i * 16, 3);
-        pcd8544_draw_bitmap(distanceChars[i], 16, 3, false);
+        pcd8544_set_pos(currentDrawingPos, 3);
+        pcd8544_draw_bitmap(distanceChars[i], charRowsArr[i], 3, false);
+        currentDrawingPos += charRowsArr[i];
     }
 
     pcd8544_finalize_frame_buf();
@@ -58,7 +59,7 @@ static void drawSimpleDetailsScreen() {
 // render one of the screens, use bitwise flags
 static void screenRenderer(TickType_t *lastWakeTime) {
     // @TODO fix trans_queue_size reaches PCD8544_TRANS_QUEUE_SIZE(32). Is this library issue of blokcing task mid-render or something? 
-    ESP_LOGI(TAG, "Renderer last wake time %d", (int)lastWakeTime);
+    // ESP_LOGI(TAG, "Renderer last wake time %d", (int)lastWakeTime);
     drawMainScreen();
 }
 
@@ -71,6 +72,7 @@ void vScreenRefreshTask(void* data) {
     drawMainScreen();
 
     while(true) {
+        // @TODO display speed 0.00 before screen saver
         if (rideParams.moving) {
             xLastWakeTime = xTaskGetTickCount();
             // refresh screen when riding

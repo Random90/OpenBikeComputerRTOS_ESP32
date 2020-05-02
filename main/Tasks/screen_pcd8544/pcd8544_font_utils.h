@@ -8,14 +8,16 @@
 
 /**
  * @brief convert bike speed from float to included font char array
+ * @param charRowsArr pointer to empty array, which will be filled with next chars row number
  * @return pointer to array of binary characters
  * */
-uint8_t **getSpeedChars(float *value);
+uint8_t **getSpeedChars(float *value, uint8_t *charRowsArr);
 
 /**
  * @brief convert distance measured from float to included font char array
+ * @param charRowsArr pointer to empty array, which will be filled with next chars row number
  * @return pointer to array of binary characters
  * */
-uint8_t **getDistanceChars(float *distance);
+uint8_t **getDistanceChars(float *distance, uint8_t *charRowsArr);
 
 #endif

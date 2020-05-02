@@ -5,27 +5,32 @@
  * @param charArr array of chars to which font data will be passed
  * @param buffer source of text
  * @param nrOfChars number of characters to copy as font from buffer
+ * @param charRows pointer to array to which size of next chars will be passed
  * @brief Translates string to array of binary font data.
  * @warning Skips dots (null pointer), dont includes special chars
- * @TODO validate string, skip special chars
+ * @TODO validate string, skip special chars, cleanup array sizes!
+ * @TODO dynamic rows number calculation
  * */
-static void fillCharsFromBuffer(uint8_t **charArr, char *buffer, int nrOfChars) {
+static void fillCharsFromBuffer(uint8_t **charArr, char *buffer, int nrOfChars, uint8_t *charRowsArr) {
     for (int i = 0; i <= nrOfChars; i++) {
         // convert to int and fill charArr with pointers to big font characters
         if (*buffer != '.' && *buffer >= '0' && *buffer <= '9') {
             char single_char_buf[1] = {*buffer};
             *charArr = fontDetermination[atoi(single_char_buf)];
+            charRowsArr[i] = 16;
         } else if(*buffer == '.'){
             *charArr = fontDetermination[10];
+            charRowsArr[i] = 3;
         } else {
             *charArr = NULL;
+            charRowsArr[i] = NULL;
         }
         buffer++;
         charArr++;
     }
 }
 
-uint8_t **getSpeedChars(float *speed) {
+uint8_t **getSpeedChars(float *speed, uint8_t *charRowsArr) {
     // lifetime array of pointers to chars
     static uint8_t *charArr[4];
     // create buffer for converted float
@@ -45,11 +50,11 @@ uint8_t **getSpeedChars(float *speed) {
     } else {
         snprintf(buffer, 10, "%d.%d", speedInt, fraction);
     }
-    fillCharsFromBuffer(charArr, buffer, 4);
+    fillCharsFromBuffer(charArr, buffer, 4, charRowsArr);
     return &charArr;
 }
 
-uint8_t **getDistanceChars(float *distance) {
+uint8_t **getDistanceChars(float *distance, uint8_t *charRowsArr) {
     static uint8_t *charArr[6];
     char buffer[10];
     // @TODO handle distance > 999.9
@@ -62,6 +67,6 @@ uint8_t **getDistanceChars(float *distance) {
     } else {
         snprintf(buffer, 10, "%d.%d", distanceInt, fraction);
     }
-    fillCharsFromBuffer(charArr, buffer, 10);
+    fillCharsFromBuffer(charArr, buffer, 10, charRowsArr);
     return &charArr;
 }
