@@ -7,6 +7,7 @@
 #include "sdkconfig.h"
 #include "settings.h"
 #include "obc.h"
+#include "utils/math.h"
 
 #include "Tasks/screen_pcd8544/screen_pcd8544.h"
 
@@ -26,6 +27,7 @@ ride_params_t rideParams = {
     .rotations = 0,
     .prevRotationTickCount = 0,
     .speed = 0.0,
+    .avgSpeed = 0.0,
     .distance = 0.0,
 };
 
@@ -90,9 +92,12 @@ static void vCalcRideParamsOnISRTask(void* data)
             rideParams.rotations++;
             rideParams.msBetweenRotationTicks = ((int) rideParams.rotationTickCount - (int) rideParams.prevRotationTickCount) * (int) portTICK_RATE_MS;
             rideParams.speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) rideParams.msBetweenRotationTicks / 3600000 ); //km/h
+            // TODO calculate avg speed based on total ride time
+            rideParams.avgSpeed += (rideParams.speed - rideParams.avgSpeed) / min2((float)rideParams.rotations, (float)AVG_FACTOR);
             rideParams.distance = (float)rideParams.rotations * (float)CIRCUMFERENCE/1000000;
             rideParams.prevRotationTickCount = rideParams.rotationTickCount;    
             ESP_LOGI(TAG, "[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f", rideParams.rotations, rideParams.speed, rideParams.msBetweenRotationTicks, rideParams.distance);
+            ESP_LOGI(TAG, "[AVGS] speed: %0.2f", rideParams.avgSpeed);
             // inform screen refresh task about movement
             xTaskNotifyGive(screenRefreshTask);
         }

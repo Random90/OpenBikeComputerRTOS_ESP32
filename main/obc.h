@@ -13,6 +13,7 @@
     portTickType rotationTickCount;
     uint16_t msBetweenRotationTicks;
     float speed;
+    float avgSpeed;
     float distance;
  } ride_params_t;
 

@@ -9,9 +9,16 @@ uint8_t screenFlags = 0b00000001; // initial value, main screen enabled
 /**
  * Used to display current speed compared to average as bar on the right side of the screen
  * */
-static void drawAverageBar(uint8_t percentHeight) {
+static void drawAverageBar() {
+    int16_t percentHeight = 
+        (int)((rideParams.avgSpeed - rideParams.speed) /
+        (rideParams.speed > 0 ? rideParams.speed : 1.00) * 100);
+    // R = [-100, 100]    
+    percentHeight = percentHeight > 100 ? 100 : percentHeight;
+    percentHeight = percentHeight < -100 ? -100 : percentHeight;
+
     for (int i = 0; i < 2; i++) {
-        pcd8544_draw_line(82 + i, 0 + (48 * percentHeight / 100), 82 + i, 48);
+        pcd8544_draw_line(82 + i, 24 + (24 * percentHeight / 100), 82 + i, 48);
     }
 }
 
@@ -44,7 +51,7 @@ static void drawMainScreen() {
         currentDrawingPos += charRowsArr[i];
     }
 
-    drawAverageBar(60);
+    drawAverageBar();
     pcd8544_finalize_frame_buf();
     // display some units
     // prevents screen from breaking, there will be no space on it anyways
