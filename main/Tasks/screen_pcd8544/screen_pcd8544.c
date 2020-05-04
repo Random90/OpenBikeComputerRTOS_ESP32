@@ -10,13 +10,18 @@ uint8_t screenFlags = 0b00000001; // initial value, main screen enabled
  * Used to display current speed compared to average as bar on the right side of the screen
  * */
 static void drawAverageBar() {
-    int16_t percentHeight = 
-        (int)((rideParams.avgSpeed - rideParams.speed) /
-        (rideParams.speed > 0 ? rideParams.speed : 1.00) * 100);
+    // calculate ratio in percents
+    int16_t percentHeight;
+    float diff = rideParams.avgSpeed - rideParams.speed;
+    if (diff < 0) {
+        percentHeight = (int)((diff) / (rideParams.avgSpeed > 0 ? rideParams.avgSpeed : 1.00) * 100);
+    } else {
+        percentHeight = (int)((diff) / (rideParams.speed > 0 ? rideParams.speed : 1.00) * 100);
+    }    
     // R = [-100, 100]    
     percentHeight = percentHeight > 100 ? 100 : percentHeight;
     percentHeight = percentHeight < -100 ? -100 : percentHeight;
-
+    // render
     for (int i = 0; i < 2; i++) {
         pcd8544_draw_line(82 + i, 24 + (24 * percentHeight / 100), 82 + i, 48);
     }
