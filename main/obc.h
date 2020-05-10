@@ -12,6 +12,7 @@
     portTickType prevRotationTickCount;
     portTickType rotationTickCount;
     uint16_t msBetweenRotationTicks;
+    uint32_t totalRideTimeMs;
     float speed;
     float avgSpeed;
     float distance;
