@@ -3,8 +3,10 @@
 #include "pcd8544_font_utils.h"
 static const char* TAG = "PCD8544_TASK";
 
-bool bToogle = false;
-uint8_t screenFlags = 0b00000001; // initial value, main screen enabled
+// screen number to render
+uint8_t screenNumber = 1;
+// number of renders before screen toggle
+uint8_t frameCounter = 0;
 
 /**
  * Used to display current speed compared to average as bar on the right side of the screen
@@ -31,7 +33,6 @@ static void drawAverageBar() {
  * @warning screen designed for default font
  * */
 static void drawMainScreen() {
-    pcd8544_clear_display();
     uint8_t charRowsArr[6];
     uint8_t currentDrawingPos = 0;
     // draw speed using big chars
@@ -67,10 +68,11 @@ static void drawMainScreen() {
     pcd8544_set_pos(53, 2); //speed render has constant size
     pcd8544_printf("km/h");
     pcd8544_sync_and_gc();
+
 }
 // FIXME add better line clearing
 static void drawSimpleDetailsScreen() {
-//TODO add mutual exclusion for reading rideParams?
+    //TODO add mutual exclusion for reading rideParams?
     pcd8544_set_pos(0, 0);
     pcd8544_puts("              ");
     pcd8544_set_pos(0, 0);
@@ -84,36 +86,60 @@ static void drawSimpleDetailsScreen() {
     pcd8544_set_pos(0, 4);
     pcd8544_puts("              ");
     pcd8544_set_pos(0, 4);
-    pcd8544_printf("DiffMS: %d",  rideParams.msBetweenRotationTicks);
-    // toggle to visualize screen refresh if not moving
-    bToogle = !bToogle;
-    pcd8544_set_pos(0, 5);
-    bToogle ? pcd8544_printf("/") : pcd8544_printf("\\");
+    pcd8544_printf("DiffMS: %d",  rideParams.msBetweenRotationTicks);  
     pcd8544_sync_and_gc();
 }
 
 // render one of the screens, use bitwise flags
-static void screenRenderer(TickType_t *lastWakeTime) {
+// uses crude method for calculating time, depending on the consants and number of rendered frames since last screen toggle
+// @warning each screen method must sync buffer for itself
+static void screenRenderer() {
+    
     // @TODO fix trans_queue_size reaches PCD8544_TRANS_QUEUE_SIZE(32). Is this library issue of blokcing task mid-render or something? 
-    // ESP_LOGI(TAG, "Renderer last wake time %d", (int)lastWakeTime);
-    drawMainScreen();
+    if (SCREEN_CHANGE_AFTER_MS / REFRESH_RATE_MS <= frameCounter) {
+        frameCounter = 0;
+        screenNumber++;
+        if (screenNumber > IMPLEMENTED_SCREENS) {
+            screenNumber = 1;
+        }
+    }
+    pcd8544_clear_display();
+    pcd8544_finalize_frame_buf();
+    pcd8544_sync_and_gc();
+
+    switch (screenNumber) {
+        case 1:
+            drawMainScreen();
+            break;
+        case 2:
+            drawSimpleDetailsScreen();
+            break;
+        default:
+            drawMainScreen();
+            ESP_LOGW(TAG, "[Renderer] Screen %d doesn't exists!", screenNumber);
+            break;
+    }
+   
+    
+    frameCounter++;
 }
 
 void vScreenRefreshTask(void* data) {
-    bool screenOff = false;
-    uint32_t notificationVal = 0;
+    // TODO enable screen toggler and rendering on not moving, before powerdown state
     ESP_LOGI(TAG, "Init");
 
+    bool screenOff = false;
+    uint32_t notificationVal = 0;
     TickType_t xLastWakeTime;
-    drawMainScreen();
+
+    screenRenderer();
 
     while(true) {
-        // @TODO display speed 0.00 before screen saver
         if (rideParams.moving) {
             xLastWakeTime = xTaskGetTickCount();
             // refresh screen when riding
-            screenRenderer(&xLastWakeTime);
             vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
+            screenRenderer();
         } else {
             // unblock and refresh/turn on screen when started moving again
             notificationVal = ulTaskNotifyTake(pdTRUE, POWER_SAVE_DELAY_MS/portTICK_RATE_MS);
