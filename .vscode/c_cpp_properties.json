@@ -92,6 +92,7 @@
                 "C:/Users/gczer/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
                 "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/Tasks",
                 "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/Tasks/screen_pcd8544",
+                "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/Tasks/storage",
                 "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/utils",
                 "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/components/esp32-pcd8544/src",
                 "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/components/u8g2/csrc",
@@ -187,6 +188,7 @@
                     "C:/Users/gczer/.platformio/packages/framework-espidf/components/wifi_provisioning/include",
                     "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/Tasks",
                     "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/Tasks/screen_pcd8544",
+                    "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/Tasks/storage",
                     "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/main/utils",
                     "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/components/esp32-pcd8544/src",
                     "C:/Users/gczer/Documents/Projekty/OpenBikeComputerRTOS_ESP32/components/u8g2/csrc",
@@ -195,12 +197,21 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=40301",
+                "HAVE_CONFIG_H",
+                "MBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\"",
+                "UNITY_INCLUDE_CONFIG_H",
+                "WITH_POSIX",
+                "_GNU_SOURCE",
+                "IDF_VER=\"HEAD-HASH-NOTFOUND\"",
+                "GCC_NOT_5_2_0",
+                "ESP_PLATFORM",
+                "PLATFORMIO=40303",
                 "ARDUINO_ESP32_DEV",
                 ""
             ],
             "intelliSenseMode": "clang-x64",
             "cStandard": "c99",
+            "cppStandard": "c++11",
             "compilerPath": "C:/Users/gczer/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe",
             "compilerArgs": [
                 "-mlongcalls",

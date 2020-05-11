@@ -10,6 +10,7 @@
 #include "utils/math.h"
 
 #include "Tasks/screen_pcd8544/screen_pcd8544.h"
+#include "Tasks/storage/spiffs_main.h"
 
 
 //hardware setup
@@ -153,6 +154,7 @@ void vAttachInterrupts() {
 void app_main()
 {
     ESP_LOGI(TAG, "Initializing");
+    vInitSpiffs();
     vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
