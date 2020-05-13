@@ -1,10 +1,7 @@
 #ifndef OBC_CORE
 #define OBC_CORE
 
-#include "freertos/FreeRTOS.h"
-#include "driver/spi_common.h"
-#include "esp_log.h"
-#include "pcd8544.h"
+
 // OBC specific global structs
  typedef struct ride_params_t {
     bool moving;

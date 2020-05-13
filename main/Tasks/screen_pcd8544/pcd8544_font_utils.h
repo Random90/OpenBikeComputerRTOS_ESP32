@@ -11,13 +11,13 @@
  * @param charRowsArr pointer to empty array, which will be filled with next chars row number
  * @return pointer to array of binary characters
  * */
-uint8_t **getSpeedChars(float *value, uint8_t *charRowsArr);
+void vGetSpeedChars(uint8_t *charArr[4], float *value, uint8_t charRowsArr[6]);
 
 /**
  * @brief convert distance measured from float to included font char array
  * @param charRowsArr pointer to empty array, which will be filled with next chars row number
  * @return pointer to array of binary characters
  * */
-uint8_t **getDistanceChars(float *distance, uint8_t *charRowsArr);
+ void vGetDistanceChars(uint8_t *charArr[4], float *distance, uint8_t charRowsArr[6]);
 
 #endif

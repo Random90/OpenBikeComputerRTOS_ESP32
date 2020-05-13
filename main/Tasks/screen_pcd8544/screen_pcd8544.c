@@ -1,5 +1,11 @@
-#include "screen_pcd8544.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_log.h"
+
+#include "screen_pcd8544.h"
+#include "obc.h"
+#include "pcd8544.h"
+
 #include "pcd8544_font_utils.h"
 static const char* TAG = "PCD8544_TASK";
 
@@ -34,9 +40,11 @@ static void drawAverageBar() {
  * */
 static void drawMainScreen() {
     uint8_t charRowsArr[6];
+    uint8_t *speedChars[4];
+    uint8_t *distanceChars[6];
     uint8_t currentDrawingPos = 0;
     // draw speed using big chars
-    uint8_t **speedChars = getSpeedChars(&rideParams.speed, charRowsArr);
+    vGetSpeedChars(speedChars, &rideParams.speed, charRowsArr);
     for (int i = 0; i < 4; i++) {
         pcd8544_set_pos(currentDrawingPos, 0);
         pcd8544_draw_bitmap(speedChars[i], charRowsArr[i], 3, true);
@@ -47,9 +55,9 @@ static void drawMainScreen() {
 
     // and draw distance
     currentDrawingPos = 0;
-    uint8_t **distanceChars = getDistanceChars(&rideParams.distance, charRowsArr);
+    vGetDistanceChars(distanceChars, &rideParams.distance, charRowsArr);
     for (int i = 0; i < 6; i++) {
-        if (distanceChars[i] == NULL) {
+        if (distanceChars[i] == 0) {
             break;
         }
         pcd8544_set_pos(currentDrawingPos, 3);

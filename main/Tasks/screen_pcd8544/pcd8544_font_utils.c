@@ -11,7 +11,7 @@
  * @TODO validate string, skip special chars, cleanup array sizes!
  * @TODO dynamic rows number calculation
  * */
-static void fillCharsFromBuffer(uint8_t **charArr, char *buffer, int nrOfChars, uint8_t *charRowsArr) {
+static void fillCharsFromBuffer(uint8_t **charArr, char *buffer, int nrOfChars, uint8_t charRowsArr[6]) {
     for (int i = 0; i <= nrOfChars; i++) {
         // convert to int and fill charArr with pointers to big font characters
         if (*buffer != '.' && *buffer >= '0' && *buffer <= '9') {
@@ -23,16 +23,14 @@ static void fillCharsFromBuffer(uint8_t **charArr, char *buffer, int nrOfChars, 
             charRowsArr[i] = 3;
         } else {
             *charArr = NULL;
-            charRowsArr[i] = NULL;
+            charRowsArr[i] = 0;
         }
         buffer++;
         charArr++;
     }
 }
 
-uint8_t **getSpeedChars(float *speed, uint8_t *charRowsArr) {
-    // lifetime array of pointers to chars
-    static uint8_t *charArr[4];
+void vGetSpeedChars(uint8_t *charArr[4], float *speed, uint8_t charRowsArr[6]) {
     // create buffer for converted float
     char buffer[10];
     // prevent overflow
@@ -51,11 +49,9 @@ uint8_t **getSpeedChars(float *speed, uint8_t *charRowsArr) {
         snprintf(buffer, 10, "%d.%d", speedInt, fraction);
     }
     fillCharsFromBuffer(charArr, buffer, 4, charRowsArr);
-    return &charArr;
 }
 
-uint8_t **getDistanceChars(float *distance, uint8_t *charRowsArr) {
-    static uint8_t *charArr[6];
+void vGetDistanceChars(uint8_t *charArr[6], float *distance, uint8_t *charRowsArr) {
     char buffer[10];
     // @TODO handle distance > 999.9
     // convert float to int dot int
@@ -68,5 +64,4 @@ uint8_t **getDistanceChars(float *distance, uint8_t *charRowsArr) {
         snprintf(buffer, 10, "%d.%d", distanceInt, fraction);
     }
     fillCharsFromBuffer(charArr, buffer, 10, charRowsArr);
-    return &charArr;
 }

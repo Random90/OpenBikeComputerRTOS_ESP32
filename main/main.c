@@ -3,14 +3,22 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
-
+#include "driver/spi_common.h"
 #include "sdkconfig.h"
+#include "esp_log.h"
+
 #include "settings.h"
 #include "obc.h"
+
 #include "utils/math.h"
+#include "pcd8544.h"
 
 #include "Tasks/screen_pcd8544/screen_pcd8544.h"
 #include "Tasks/storage/spiffs_main.h"
+
+
+
+
 
 
 //hardware setup
