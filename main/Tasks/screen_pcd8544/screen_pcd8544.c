@@ -71,8 +71,9 @@ static void drawMainScreen() {
     // prevents screen from breaking, there will be no space on it anyways
     if(rideParams.distance < 100) {
         pcd8544_set_pos(currentDrawingPos + 2, 5);
+        pcd8544_printf("km");
     }
-    pcd8544_printf("km");
+    
     pcd8544_set_pos(53, 2); //speed render has constant size
     pcd8544_printf("km/h");
     pcd8544_sync_and_gc();
