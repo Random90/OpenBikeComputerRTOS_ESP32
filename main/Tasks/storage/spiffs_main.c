@@ -8,10 +8,14 @@
 #define TAG "SPIFFS_MAIN"
 
 //@TODO clearing value, some protection agains huge speeds from interference
+//@TODO ride maxes/total maxes
+//@TODO saving ride data
+
 // values read from files
 float maxSpeedFileBuff = 0.00;
+float totalDistanceFileBuff = 0.00;
 
-void fReadMaxSpeed() {
+void vReadMaxSpeed() {
     FILE *fmaxSpeed = fopen("/spiffs/max_speed", "rb");
     if (fmaxSpeed == NULL) {
         ESP_LOGE(TAG, "Failed to open file max_speed");
@@ -22,12 +26,17 @@ void fReadMaxSpeed() {
         ESP_LOGI(TAG, "max speed from file %f", maxSpeedFileBuff);
     }
 }
-// update rideParams with max speed, total distance from files before ride
-static void vPopulateRideParamsFromStorage()
-{
-    // @TODO mutex?
-    fReadMaxSpeed();
-    rideParams.maxSpeed = maxSpeedFileBuff;
+
+void static vReadTotalDistance() {
+    FILE *ftotalDistance = fopen("/spiffs/total_distance", "rb");
+    if (ftotalDistance == NULL) {
+        ESP_LOGE(TAG, "Failed to open file total_distance");
+        return;
+    } else {
+        fread(&totalDistanceFileBuff, 1, sizeof(totalDistanceFileBuff), ftotalDistance);
+        fclose(ftotalDistance);
+        ESP_LOGI(TAG, "total distance from file %f", totalDistanceFileBuff);
+    }
 }
 
 static void vSaveMaxSpeed() {
@@ -42,6 +51,31 @@ static void vSaveMaxSpeed() {
             fclose(fmaxSpeed);
         }
     }
+}
+
+static void vSaveTotalDistance() {
+    if(rideParams.totalDistance > totalDistanceFileBuff) {
+        ESP_LOGI(TAG, "[SAVING] totalDistance: %f", rideParams.totalDistance);
+        FILE *fTotalDistance = fopen("/spiffs/total_distance", "wb");
+        if (fTotalDistance == NULL) {
+            ESP_LOGE(TAG, "Failed to open file total_distance for update");
+            return;
+        } else {
+            fwrite(&rideParams.totalDistance, 1, sizeof(rideParams.totalDistance), fTotalDistance);
+            fclose(fTotalDistance);
+        }
+    }
+}
+
+// update rideParams with max speed, total distance from files before ride
+static void vPopulateRideParamsFromStorage()
+{
+    // @TODO mutex?
+    vReadMaxSpeed();
+    rideParams.maxSpeed = maxSpeedFileBuff;
+
+    vReadTotalDistance();
+    rideParams.totalDistance = totalDistanceFileBuff;
 }
 
 void vInitSpiffs() {
@@ -80,6 +114,7 @@ void vSpiffsSyncOnStopTask(void* data) {
         status = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         if (status) {
             vSaveMaxSpeed();
+            vSaveTotalDistance();
         }
     }
 }

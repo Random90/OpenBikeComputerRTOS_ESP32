@@ -30,8 +30,8 @@ void vCalcRideParamsOnISRTask(void* data)
                 if (rideParams.speed > rideParams.maxSpeed) {
                     rideParams.maxSpeed = rideParams.speed;
                 }
-                rideParams.distance = (float)rideParams.rotations * (float)CIRCUMFERENCE/1000000;
-
+                rideParams.distance += (float)CIRCUMFERENCE/1000000;
+                rideParams.totalDistance += (float)CIRCUMFERENCE/1000000;
                 rideParams.avgSpeed = rideParams.distance / ( (float) rideParams.totalRideTimeMs / 3600000 );
             }
             rideParams.prevRotationTickCount = rideParams.rotationTickCount;    
