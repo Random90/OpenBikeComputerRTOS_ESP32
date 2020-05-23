@@ -7,6 +7,6 @@
 void vInitSpiffs();
 
 // save ride params and statistics to flash
-void vSpiffsMainTask(void* data);
+void vSpiffsSyncOnStopTask(void* data);
 
 #endif

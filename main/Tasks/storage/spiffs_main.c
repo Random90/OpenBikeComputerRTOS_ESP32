@@ -5,24 +5,43 @@
 #include "spiffs_main.h"
 #include "obc.h"
 
-static const char *TAG = "SPIFFS_MAIN";
+#define TAG "SPIFFS_MAIN"
 
+//@TODO clearing value, some protection agains huge speeds from interference
+// values read from files
+float maxSpeedFileBuff = 0.00;
+
+void fReadMaxSpeed() {
+    FILE *fmaxSpeed = fopen("/spiffs/max_speed", "rb");
+    if (fmaxSpeed == NULL) {
+        ESP_LOGE(TAG, "Failed to open file max_speed");
+        return;
+    } else {
+        fread(&maxSpeedFileBuff, 1, sizeof(maxSpeedFileBuff), fmaxSpeed);
+        fclose(fmaxSpeed);
+        ESP_LOGI(TAG, "max speed from file %f", maxSpeedFileBuff);
+    }
+}
 // update rideParams with max speed, total distance from files before ride
 static void vPopulateRideParamsFromStorage()
 {
-    FILE *fmaxSpeed = fopen("/spiffs/max_speed.txt", "r");
-    if (fmaxSpeed == NULL) {
-        ESP_LOGE(TAG, "Failed to open file max_speed.txt");
-        return;
-    }
-    char speedBuff[4];
-    fread(speedBuff, 1, sizeof speedBuff, fmaxSpeed);
-    fclose(fmaxSpeed);
-    ESP_LOGI(TAG, "%s", speedBuff);
+    // @TODO mutex?
+    fReadMaxSpeed();
+    rideParams.maxSpeed = maxSpeedFileBuff;
 }
 
 static void vSaveMaxSpeed() {
-    ESP_LOGI(TAG, "[SAVING] maxSpeed: %f", rideParams.maxSpeed);
+    if(rideParams.maxSpeed > maxSpeedFileBuff) {
+        ESP_LOGI(TAG, "[SAVING] maxSpeed: %f", rideParams.maxSpeed);
+        FILE *fmaxSpeed = fopen("/spiffs/max_speed", "wb");
+        if (fmaxSpeed == NULL) {
+            ESP_LOGE(TAG, "Failed to open file max_speed for update");
+            return;
+        } else {
+            fwrite(&rideParams.maxSpeed, 1, sizeof(rideParams.maxSpeed), fmaxSpeed);
+            fclose(fmaxSpeed);
+        }
+    }
 }
 
 void vInitSpiffs() {
@@ -54,14 +73,13 @@ void vInitSpiffs() {
     
 }
 
-// start with one value updated everytime > oldMaxSpeed
-// append to file to save previous data? goto EOF and move poiner -sizeOf speed float val?
-// use freeRTOS buffer/queue with timeout (number of reads? few seconds?) to debounce multiple values writes at start
-// control file size?
-// writing everysecond could wear flash after 1 year. buffer some data and write with longer intervals? (see freeRTOS buffer above)
-
 void vSpiffsSyncOnStopTask(void* data) {
-    // unblock on notification from rideStatus task
-    // save max speed and others params to files
-    vSaveMaxSpeed();
+    uint32_t status;
+    while (true)
+    {
+        status = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        if (status) {
+            vSaveMaxSpeed();
+        }
+    }
 }

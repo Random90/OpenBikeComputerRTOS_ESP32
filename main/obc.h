@@ -26,5 +26,7 @@ extern ride_params_t rideParams;
 extern xQueueHandle reed_evt_queue;
 
 //shared tasks
-extern TaskHandle_t screenRefreshTask;
+extern TaskHandle_t screenRefreshTaskHandle;
+extern TaskHandle_t spiffsSyncOnStopTaskHandle;
+
 #endif

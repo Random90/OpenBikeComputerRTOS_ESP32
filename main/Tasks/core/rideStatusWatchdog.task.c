@@ -31,7 +31,9 @@ void vRideStatusWatchdogTask(void *arg) {
             rideParams.msBetweenRotationTicks = 0;
             rideParams.moving = false;
             rideParams.prevRotationTickCount = 0;
-            // TODO add semaphore and run data saving, stop screen refresh, run powersave algorithms, sync with could etc
+
+            // store ride params if stopped
+            xTaskNotifyGive(spiffsSyncOnStopTaskHandle);
         } 
         vTaskDelayUntil(&currentTickCount, 1000/portTICK_RATE_MS);
     }
