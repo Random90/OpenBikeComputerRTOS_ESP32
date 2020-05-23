@@ -88,21 +88,25 @@ static void drawMainScreen() {
 }
 // FIXME add better line clearing
 static void drawSimpleDetailsScreen() {
+    uint8_t rideHours, rideMinutes, rideSeconds;
+
+    rideHours = rideParams.totalRideTimeMs / 3600000;
+    rideMinutes = (rideParams.totalRideTimeMs / 60000) - (rideHours*60);
+    rideSeconds = (rideParams.totalRideTimeMs / 1000) - (rideMinutes*60);
+
     //TODO add mutual exclusion for reading rideParams?
     pcd8544_set_pos(0, 0);
     pcd8544_puts("              ");
     pcd8544_set_pos(0, 0);
-    pcd8544_printf("Speed: %0.2f",  rideParams.speed);
+    pcd8544_printf("AvgSpd: %0.2f", rideParams.avgSpeed);
     pcd8544_set_pos(0, 1);
-    pcd8544_printf("Distance: %0.2f",  rideParams.distance);
+    pcd8544_printf("T.Dstn: %0.2f", rideParams.totalDistance);
     pcd8544_set_pos(0, 2);
-    pcd8544_printf("Rotations:");
+    pcd8544_printf("MaxSpd: %0.2f", rideParams.maxSpeed);
     pcd8544_set_pos(0, 3);
-    pcd8544_printf("%d",  rideParams.rotations);
-    pcd8544_set_pos(0, 4);
     pcd8544_puts("              ");
-    pcd8544_set_pos(0, 4);
-    pcd8544_printf("DiffMS: %d",  rideParams.msBetweenRotationTicks);  
+    pcd8544_set_pos(0, 3);
+    pcd8544_printf("Time: %d:%d:%d", rideHours, rideMinutes, rideSeconds);
     pcd8544_sync_and_gc();
 }
 
