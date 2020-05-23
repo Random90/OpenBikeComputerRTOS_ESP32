@@ -1,6 +1,9 @@
 #ifndef OBC_CORE
 #define OBC_CORE
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 
 // OBC specific global structs
  typedef struct ride_params_t {
@@ -13,6 +16,15 @@
     float speed;
     float avgSpeed;
     float distance;
+    float maxSpeed;
+    float totalDistance;
  } ride_params_t;
 
+extern ride_params_t rideParams;
+
+//shared queues
+extern xQueueHandle reed_evt_queue;
+
+//shared tasks
+extern TaskHandle_t screenRefreshTask;
 #endif

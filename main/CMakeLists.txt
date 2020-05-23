@@ -1,13 +1,17 @@
 idf_component_register(
     SRCS 
-        "main.c" 
+        "main.c"
+        "Tasks/core/blinker.task.c" 
+        "Tasks/core/calcRideParamsOnISR.task.c" 
+        "Tasks/core/rideStatusWatchdog.task.c" 
+        "Tasks/storage/spiffs_main.c" 
         "Tasks/screen_pcd8544/screen_pcd8544.c" 
         "Tasks/screen_pcd8544/pcd8544_font_utils.c" 
-        "Tasks/storage/spiffs_main.c" 
         "utils/math.c" 
         "Tasks/screen_pcd8544/pcd8544_font16x24.c"
     INCLUDE_DIRS 
         "Tasks" 
+        "Tasks/core" 
         "Tasks/screen_pcd8544" 
         "Tasks/storage" 
         "utils"

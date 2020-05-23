@@ -8,9 +8,10 @@
 #define SCREEN_CHANGE_AFTER_MS 5000
 
 #define IMPLEMENTED_SCREENS 2
-extern ride_params_t rideParams;
 
 // Task used to refresh the pcd8544 screen displayed information every half second
 void vScreenRefreshTask(void* data);
 
+// init screen hardware
+void vInitPcd8544Screen();
 #endif

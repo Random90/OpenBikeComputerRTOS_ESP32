@@ -7,7 +7,14 @@
 #include "pcd8544.h"
 
 #include "pcd8544_font_utils.h"
-static const char* TAG = "PCD8544_TASK";
+
+#define TAG "PCD8544_TASK"
+
+//hardware setup
+pcd8544_config_t config = {
+        .spi_host = HSPI_HOST,
+        .is_backlight_common_anode = false,
+};
 
 // screen number to render
 uint8_t screenNumber = 1;
@@ -163,4 +170,13 @@ void vScreenRefreshTask(void* data) {
             }
         }
     }
+}
+
+void vInitPcd8544Screen() {
+    ESP_LOGI(TAG, "Init pcd8544 screen");
+    pcd8544_init(&config);
+    pcd8544_set_backlight(true);
+    pcd8544_clear_display();
+    pcd8544_finalize_frame_buf();
+    pcd8544_sync_and_gc();
 }
