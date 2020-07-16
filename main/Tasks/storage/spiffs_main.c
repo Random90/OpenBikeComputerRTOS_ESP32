@@ -7,6 +7,7 @@
 
 #define TAG "SPIFFS_MAIN"
 
+//@TODO syncIntervalTask - to prevent big data loss on powerdown or error
 //@TODO clearing value, some protection agains huge speeds from interference
 //@TODO ride maxes/total maxes
 //@TODO saving ride data
@@ -111,10 +112,8 @@ void vSpiffsSyncOnStopTask(void* data) {
     uint32_t status;
     while (true)
     {
-        status = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        if (status) {
-            vSaveMaxSpeed();
-            vSaveTotalDistance();
-        }
+        status = ulTaskNotifyTake(pdTRUE, SPIFFS_SYNC_INTERVAL_MS/portTICK_RATE_MS);
+        vSaveMaxSpeed();
+        vSaveTotalDistance();
     }
 }
