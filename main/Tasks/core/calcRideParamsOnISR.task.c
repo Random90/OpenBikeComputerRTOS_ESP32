@@ -19,6 +19,9 @@ void vCalcRideParamsOnISRTask(void* data)
             // TODO create buffer for reed time impulses before calculating time and speed
             // TODO block rideParams while calculating?
             if (rideParams.prevRotationTickCount != 0) {
+                if (!rideParams.moving) {
+                    esp_event_post_to(obc_events_loop, OBC_EVENTS, RIDE_START_EVENT, NULL, 0, portMAX_DELAY);
+                }
                 rideParams.moving = true;
                 rideParams.rotations++;
                 rideParams.msBetweenRotationTicks = ((int) rideParams.rotationTickCount - (int) rideParams.prevRotationTickCount) * (int) portTICK_RATE_MS;

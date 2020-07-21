@@ -11,6 +11,7 @@
 //@TODO clearing value, some protection agains huge speeds from interference
 //@TODO ride maxes/total maxes
 //@TODO saving ride data
+//@TODO fix random saving after stop wheb data is already saved (not changed)
 
 // values read from files
 float maxSpeedFileBuff = 0.00;

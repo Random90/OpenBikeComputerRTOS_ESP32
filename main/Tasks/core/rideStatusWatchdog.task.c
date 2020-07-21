@@ -2,6 +2,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
+#include "esp_event_base.h"
 
 #include "rideStatusWatchdog.task.h"
 #include "settings.h"
@@ -34,6 +35,7 @@ void vRideStatusWatchdogTask(void *arg) {
 
             // store ride params if stopped
             xTaskNotifyGive(spiffsSyncOnStopTaskHandle);
+            esp_event_post_to(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, NULL, 0, portMAX_DELAY);
         } 
         vTaskDelayUntil(&currentTickCount, 1000/portTICK_RATE_MS);
     }

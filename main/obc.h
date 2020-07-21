@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "esp_event.h"
 
 // OBC specific global structs
  typedef struct ride_params_t {
@@ -21,6 +22,17 @@
  } ride_params_t;
 
 extern ride_params_t rideParams;
+
+// obc event loop
+ESP_EVENT_DECLARE_BASE(OBC_EVENTS);
+extern esp_event_loop_handle_t obc_events_loop;
+
+// obc events
+
+enum {
+    RIDE_START_EVENT,                    // raised after ride start
+    RIDE_STOP_EVENT                      // raised when not mobing state is detected
+};
 
 //shared queues
 extern xQueueHandle reed_evt_queue;

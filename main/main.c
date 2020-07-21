@@ -4,6 +4,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_system.h"
+#include "esp_event_base.h"
+
 
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
@@ -25,6 +27,18 @@
 #include "Tasks/sync/obc_rest.task.h"
 
 #define TAG "OBC_MAIN"
+
+// obc event loop
+ESP_EVENT_DEFINE_BASE(OBC_EVENTS);
+esp_event_loop_handle_t obc_events_loop;
+esp_event_loop_args_t obc_events_loop_args = {
+        .queue_size = 5,
+        .task_name = "obc_events_loop_task",
+        .task_priority = 7,
+        .task_stack_size = 2048,
+        .task_core_id = tskNO_AFFINITY
+};
+
 
 // declare global queues 
 xQueueHandle reed_evt_queue = NULL;
@@ -53,6 +67,8 @@ static void IRAM_ATTR vReedISR(void* arg) {
 }
 
 void vInitTasks() {
+    // event loop created with task with priority 7
+    ESP_ERROR_CHECK(esp_event_loop_create(&obc_events_loop_args, &obc_events_loop));
     xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 6, NULL);  
     xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
     xTaskCreate(&vRideStatusWatchdogTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
@@ -89,6 +105,10 @@ void vInitNVS() {
     ESP_ERROR_CHECK(ret);
 }
 
+void testHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    ESP_LOGI(TAG, "handling %s %d", base, id);
+}
+
 void app_main()
 {
     ESP_LOGI(TAG, "Initializing");
@@ -98,5 +118,6 @@ void app_main()
     vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, ESP_EVENT_ANY_ID, testHandler, obc_events_loop));
     ESP_LOGI(TAG, "Startup complete");
 }
