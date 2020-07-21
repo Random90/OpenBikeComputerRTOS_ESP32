@@ -2,7 +2,12 @@
 #include "esp_tls.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_event_base.h"
 #include <string.h>
+#include "freertos/task.h"
+
+#include "wifi.h"
+#include "obc.h"
 
 #define WEB_SERVER CONFIG_OBC_SERVER_ADDR
 #define WEB_PORT CONFIG_OBC_SERVER_PORT
@@ -13,7 +18,7 @@
 
 #define TAG "OBC_REST"
 
-esp_err_t _http_event_handler(esp_http_client_event_t *evt)
+static esp_err_t vhttpEventHandler(esp_http_client_event_t *evt)
 {
     static char *output_buffer;  // Buffer to store response of http request from event handler
     //static int output_len;       // Stores number of bytes read
@@ -63,6 +68,10 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
 void vHttpSyncRest(void *pvParameters)
 {
+    //@TODO delay sync startup
+    //@TODO retry after delay on no wifi
+    vInitWifiStation();
+
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
 
     esp_http_client_config_t config = {
@@ -70,7 +79,7 @@ void vHttpSyncRest(void *pvParameters)
         .port = WEB_PORT,
         .path = "/",
         .query = "",
-        .event_handler = _http_event_handler,
+        .event_handler = vhttpEventHandler,
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -90,7 +99,17 @@ void vHttpSyncRest(void *pvParameters)
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
 
     esp_http_client_cleanup(client);
+    vDeinitWifiStation();
 
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
+}
+
+static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    xTaskCreate(&vHttpSyncRest, "vHttpSyncRest", 8192, NULL, 5, NULL);
+}
+
+void vInitSync() {
+    ESP_LOGI(TAG, "Init");
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, obc_events_loop));
 }

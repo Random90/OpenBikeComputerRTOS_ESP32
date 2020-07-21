@@ -16,7 +16,6 @@
 #include "settings.h"
 #include "obc.h"
 
-#include "wifi.h"
 #include "utils/math.h"
 
 #include "Tasks/core/blinker.task.h"
@@ -74,7 +73,6 @@ void vInitTasks() {
     xTaskCreate(&vRideStatusWatchdogTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
     xTaskCreate(&vSpiffsSyncOnStopTask, "vSpiffsSyncOnStopTask", 2048, NULL, 3, &spiffsSyncOnStopTaskHandle);
     xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, &screenRefreshTaskHandle);
-    xTaskCreate(&vHttpSyncRest, "vHttpSyncRest", 8192, NULL, 5, NULL);
 }
 
 void vAttachInterrupts() {
@@ -112,12 +110,13 @@ void testHandler(void* handler_args, esp_event_base_t base, int32_t id, void* ev
 void app_main()
 {
     ESP_LOGI(TAG, "Initializing");
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     vInitNVS();
-    vInitWifiStation();
     vInitSpiffs();
     vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
+    vInitSync();
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, ESP_EVENT_ANY_ID, testHandler, obc_events_loop));
     ESP_LOGI(TAG, "Startup complete");
 }

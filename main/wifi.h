@@ -7,4 +7,9 @@
  * */
 void vInitWifiStation(void);
 
+/**
+ * @brief disconnect, turn off and unload wifi driver;
+ * */
+void vDeinitWifiStation(void);
+
 #endif

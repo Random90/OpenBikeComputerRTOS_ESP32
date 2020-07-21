@@ -46,7 +46,6 @@ void vInitWifiStation(void)
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA INIT");
     s_wifi_event_group = xEventGroupCreate();
     tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -91,4 +90,10 @@ void vInitWifiStation(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
     vEventGroupDelete(s_wifi_event_group);
+}
+
+void vDeinitWifiStation() {
+    esp_wifi_disconnect();
+    esp_wifi_stop();
+    esp_wifi_deinit();
 }
