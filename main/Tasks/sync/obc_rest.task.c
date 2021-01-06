@@ -5,12 +5,14 @@
 #include "esp_event_base.h"
 #include <string.h>
 #include "freertos/task.h"
-
 #include "wifi.h"
+
 #include "obc.h"
+#include "settings.h"
 
 #define WEB_SERVER CONFIG_OBC_SERVER_ADDR
 #define WEB_PORT CONFIG_OBC_SERVER_PORT
+#define API_KEY CONFIG_OBC_SERVER_API_KEY
 
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
@@ -70,38 +72,52 @@ void vHttpSyncRest(void *pvParameters)
 {
     //@TODO delay sync startup
     //@TODO retry after delay on no wifi
+    ESP_LOGI(TAG, "Starting wifi");
     vInitWifiStation();
 
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
 
     esp_http_client_config_t config = {
         .host = WEB_SERVER,
-        .port = WEB_PORT,
-        .path = "/",
+        .path = "/activities/",
         .query = "",
         .event_handler = vhttpEventHandler,
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
-    // GET
-    esp_http_client_set_method(client, HTTP_METHOD_GET);
-    esp_http_client_set_header(client, "X-Requested-With", "OBC");
-    esp_http_client_set_header(client, "accept", "application/json");
+    char post_data[100];
+    snprintf(
+        post_data, 
+        sizeof(post_data), 
+        "{\"circumference\": %d, \"rotations\": %d \"rideTime\": %d}",
+        CIRCUMFERENCE,
+        rideParams.rotations,
+        rideParams.totalRideTimeMs
+    );
+
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_header(client, "X-Requested-With", "OBC_ESP32");
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "Authorization", API_KEY);
+    esp_http_client_set_post_field(client, post_data, strlen(post_data));
+
+    ESP_LOGI(TAG, "Performing HTTP post request to OBC_Server");
+
     esp_err_t err = esp_http_client_perform(client);
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %d",
+        ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
     } else {
-        ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
     }
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
 
     esp_http_client_cleanup(client);
     vDeinitWifiStation();
 
-    ESP_LOGI(TAG, "Finish http example");
+    ESP_LOGI(TAG, "Sync finished");
     vTaskDelete(NULL);
 }
 

@@ -1,6 +1,7 @@
 #ifndef TASKS_STORAGE_SPIFFS_MAIN_H
 #define TASKS_STORAGE_SPIFFS_MAIN_H
 
+// sync while riding every n ms
 #define SPIFFS_SYNC_INTERVAL_MS 60000
 #define MAX_FILES 1
 

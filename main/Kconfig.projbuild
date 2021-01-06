@@ -30,15 +30,20 @@ menu "OBC Configuration"
     menu "Synchronization"
         config OBC_SERVER_ADDR
             string "OBC Sync Server Root Address"
-            default "malina9.ddns.net"
+            default "http://malina9.ddns.net/obc_server"
             help
                 Address of synchronization server to which ride data will be sent after each ride, if WiFi is connected.
                 
         config OBC_SERVER_PORT
             int "OBC Sync Server Port"
-            default "8000"
+            default "80"
             help
                Port of synchronization server to which ride data will be sent after each ride, if WiFi is connected. 
+
+        config OBC_SERVER_API_KEY
+            string "API KEY for malina9 hosted sync server"
+            help
+                Used to authorize and authenticate with malina9 obc_server. Enter with Token word before key
     endmenu
 
 endmenu
