@@ -165,6 +165,7 @@ void vScreenRefreshTask(void* data) {
             notificationVal = ulTaskNotifyTake(pdTRUE, POWER_SAVE_DELAY_MS/portTICK_RATE_MS);
             // turn off screen after POWER_SAVE_DELAY_MS
             if (notificationVal == 0 && !screenOff) {
+                ESP_LOGI(TAG, "Screen powerdown mode");
                 pcd8544_set_powerdown_mode(true);
                 screenOff = true;
             } else if (notificationVal > 0 && screenOff) {
