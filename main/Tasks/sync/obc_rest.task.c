@@ -5,9 +5,10 @@
 #include "esp_event_base.h"
 #include <string.h>
 #include "freertos/task.h"
-#include "wifi.h"
+#include "lwip/sys.h"
 
 #include "obc.h"
+#include "wifi.h"
 #include "settings.h"
 
 #define WEB_SERVER CONFIG_OBC_SERVER_ADDR
@@ -73,7 +74,7 @@ void vHttpSyncRest(void *pvParameters)
     //@TODO delay sync startup
     //@TODO retry after delay on no wifi
     ESP_LOGI(TAG, "Starting wifi");
-    vInitWifiStation();
+    esp_netif_t *wifi_netif_instance = vInitWifiStation();
 
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
 
@@ -90,12 +91,13 @@ void vHttpSyncRest(void *pvParameters)
     snprintf(
         post_data, 
         sizeof(post_data), 
-        "{\"circumference\": %d, \"rotations\": %d \"rideTime\": %d}",
+        "{\"circumference\": %d, \"rotations\": %d, \"rideTime\": %d}",
         CIRCUMFERENCE,
         rideParams.rotations,
         rideParams.totalRideTimeMs
     );
-
+    // @TODO use params and config
+    esp_http_client_set_url(client, "http://malina9.ddns.net/obc_server/activities/");
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "X-Requested-With", "OBC_ESP32");
     esp_http_client_set_header(client, "Content-Type", "application/json");
@@ -115,7 +117,7 @@ void vHttpSyncRest(void *pvParameters)
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
 
     esp_http_client_cleanup(client);
-    vDeinitWifiStation();
+    vDeinitWifiStation(wifi_netif_instance);
 
     ESP_LOGI(TAG, "Sync finished");
     vTaskDelete(NULL);

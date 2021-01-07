@@ -5,11 +5,11 @@
 /**
  * @brief synchronously initialize wifi as a station and connect to sdkconfig specified wifi network
  * */
-void vInitWifiStation(void);
+esp_netif_t *vInitWifiStation(void);
 
 /**
  * @brief disconnect, turn off and unload wifi driver;
  * */
-void vDeinitWifiStation(void);
+void vDeinitWifiStation(esp_netif_t * wifi_netif_instance);
 
 #endif
