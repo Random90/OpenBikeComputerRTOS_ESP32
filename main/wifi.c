@@ -49,6 +49,7 @@ esp_netif_t *vInitWifiStation(void)
 
     ESP_ERROR_CHECK(esp_netif_init());
 
+    // @TODO make global instace and check if already exists
     esp_netif_t *wifi_netif_instance = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();

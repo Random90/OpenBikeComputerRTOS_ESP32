@@ -73,6 +73,7 @@ void vHttpSyncRest(void *pvParameters)
 {
     //@TODO delay sync startup
     //@TODO retry after delay on no wifi
+    //@TODO don't try to sync when no wifi
     ESP_LOGI(TAG, "Starting wifi");
     esp_netif_t *wifi_netif_instance = vInitWifiStation();
 
@@ -105,17 +106,21 @@ void vHttpSyncRest(void *pvParameters)
     esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
     ESP_LOGI(TAG, "Performing HTTP post request to OBC_Server");
+    esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_START_EVENT, NULL, 0, portMAX_DELAY);
 
     esp_err_t err = esp_http_client_perform(client);
+    bool reqestSuccessful;
     if (err == ESP_OK) {
+        reqestSuccessful = true;
         ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
     } else {
+        reqestSuccessful = false;
         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
     }
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
-
+    esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_STOP_EVENT, &reqestSuccessful, sizeof(reqestSuccessful), portMAX_DELAY);
     esp_http_client_cleanup(client);
     vDeinitWifiStation(wifi_netif_instance);
 
@@ -129,5 +134,5 @@ static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int
 
 void vRegisterServerSyncTask() {
     ESP_LOGI(TAG, "Init");
-    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, obc_events_loop));
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
 }

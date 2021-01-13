@@ -31,7 +31,9 @@ extern esp_event_loop_handle_t obc_events_loop;
 
 enum {
     RIDE_START_EVENT,                    // raised after ride start
-    RIDE_STOP_EVENT                      // raised when not mobing state is detected
+    RIDE_STOP_EVENT,                     // raised when not moving state is detected
+    SYNC_START_EVENT,                    // sync with obc_server started
+    SYNC_STOP_EVENT                      //  sync with obc_server finished with success or failure
 };
 
 //shared queues

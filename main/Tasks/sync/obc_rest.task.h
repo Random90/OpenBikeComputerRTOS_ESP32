@@ -4,6 +4,6 @@
 /**
  * @brief initialize ride end event listener, which will init and connect wifi, and send data to the obc server
  * */
-void vInitSync();
+void vRegisterServerSyncTask();
 
 #endif
