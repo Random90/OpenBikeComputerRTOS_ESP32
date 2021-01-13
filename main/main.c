@@ -116,7 +116,7 @@ void app_main()
     vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
-    vInitSync();
+    vRegisterServerSyncTask();
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, ESP_EVENT_ANY_ID, testHandler, obc_events_loop));
     ESP_LOGI(TAG, "Startup complete");
 }

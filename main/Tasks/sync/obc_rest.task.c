@@ -127,7 +127,7 @@ static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int
     xTaskCreate(&vHttpSyncRest, "vHttpSyncRest", 8192, NULL, 5, NULL);
 }
 
-void vInitSync() {
+void vRegisterServerSyncTask() {
     ESP_LOGI(TAG, "Init");
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, obc_events_loop));
 }

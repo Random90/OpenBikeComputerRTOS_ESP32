@@ -10,9 +10,8 @@
 
 #define TAG "RIDE_WATCHDOG"
 /* 
-TODO maybe use simple timer instead of the task to avoid preemption 
 Task which checks every second if bike is still moving, by reading number of
-items waiting in reed ISR queue. Calls notification
+items waiting in reed ISR queue. Posts to obc_event_loop with ride_stop_event
 */
 void vRideStatusWatchdogTask(void *arg) {
     int msg_count;

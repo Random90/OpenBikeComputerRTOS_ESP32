@@ -51,6 +51,7 @@ static void vSaveMaxSpeed() {
         } else {
             fwrite(&rideParams.maxSpeed, 1, sizeof(rideParams.maxSpeed), fmaxSpeed);
             fclose(fmaxSpeed);
+            maxSpeedFileBuff = rideParams.maxSpeed;
         }
     }
 }
@@ -58,6 +59,7 @@ static void vSaveMaxSpeed() {
 static void vSaveTotalDistance() {
     if(rideParams.totalDistance > totalDistanceFileBuff) {
         ESP_LOGI(TAG, "[SAVING] totalDistance: %f", rideParams.totalDistance);
+        ESP_LOGI(TAG, "[TEST] count: %d, distance: %0.2f", rideParams.rotations, rideParams.distance);
         FILE *fTotalDistance = fopen("/spiffs/total_distance", "wb");
         if (fTotalDistance == NULL) {
             ESP_LOGE(TAG, "Failed to open file total_distance for update");
@@ -65,6 +67,7 @@ static void vSaveTotalDistance() {
         } else {
             fwrite(&rideParams.totalDistance, 1, sizeof(rideParams.totalDistance), fTotalDistance);
             fclose(fTotalDistance);
+            totalDistanceFileBuff = rideParams.totalDistance;
         }
     }
 }
