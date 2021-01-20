@@ -142,6 +142,10 @@ static void vHttpSyncRestTask(void *pvParameters)
 }
 
 static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    if (rideParams.distance < OBC_SERVER_SYNC_MIN_DIST) {
+        ESP_LOGI(TAG, "Minimum distance requirement for synchronization not met, aborting");
+        return;
+    }
     if (!sync_pending) {
         sync_pending = true;
         xTaskCreate(&vHttpSyncRestTask, "vHttpSyncRest", 8192, NULL, 5, &httpSyncRestTaskHandle);
