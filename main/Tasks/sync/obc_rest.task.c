@@ -77,6 +77,11 @@ void vHttpSyncRest(void *pvParameters)
     ESP_LOGI(TAG, "Starting wifi");
     esp_netif_t *wifi_netif_instance = vInitWifiStation();
 
+    if (wifi_netif_instance == NULL) {
+        ESP_LOGI(TAG, "Aborting sync due to connection error");
+        vTaskDelete(NULL);
+    }
+
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
 
     esp_http_client_config_t config = {
@@ -129,6 +134,7 @@ void vHttpSyncRest(void *pvParameters)
 }
 
 static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    // @TODO debouce with eventGroup. Wait for N seconds (from settings?) for rideStart event bit to cancel sync. Sync on timeout.
     xTaskCreate(&vHttpSyncRest, "vHttpSyncRest", 8192, NULL, 5, NULL);
 }
 

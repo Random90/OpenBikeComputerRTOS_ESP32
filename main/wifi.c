@@ -87,11 +87,10 @@ esp_netif_t *vInitWifiStation(void)
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s",
-                 WIFI_SSID);
+        ESP_LOGI(TAG, "connected to ap SSID:%s", WIFI_SSID);
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s",
-                 WIFI_SSID);
+        ESP_LOGI(TAG, "Failed to connect to SSID:%s", WIFI_SSID);
+        return NULL;
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
