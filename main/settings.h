@@ -5,6 +5,8 @@
 #define CIRCUMFERENCE CONFIG_WHEEL_CIRCUMFERENCE
 /* Time after which OBC enters 'not riding' mode*/
 #define RIDE_TIMEOUT_MS 2500
+// Time of inactivity needed to start sychronization of a ride
+#define OBC_SERVER_SYNC_DEBOUNCE_MS 30000
 
 #define ESP_INTR_FLAG_DEFAULT 0
 #define BLINK_GPIO 2

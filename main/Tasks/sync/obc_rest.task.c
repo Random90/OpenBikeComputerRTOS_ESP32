@@ -18,8 +18,11 @@
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
-
 #define TAG "OBC_REST"
+
+static TaskHandle_t httpSyncRestTaskHandle = NULL;
+static bool sync_pending = false;
+static bool reqestSuccessful;
 
 static esp_err_t vhttpEventHandler(esp_http_client_event_t *evt)
 {
@@ -68,20 +71,7 @@ static esp_err_t vhttpEventHandler(esp_http_client_event_t *evt)
     }
     return ESP_OK;
 }
-
-void vHttpSyncRest(void *pvParameters)
-{
-    //@TODO delay sync startup
-    //@TODO retry after delay on no wifi
-    //@TODO don't try to sync when no wifi
-    ESP_LOGI(TAG, "Starting wifi");
-    
-
-    if (vInitWifiStation() != ESP_OK) {
-        ESP_LOGI(TAG, "Aborting sync due to connection error");
-        vTaskDelete(NULL);
-    }
-
+static bool vPerformPostReq() {
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
 
     esp_http_client_config_t config = {
@@ -89,19 +79,18 @@ void vHttpSyncRest(void *pvParameters)
         .path = "/activities/",
         .query = "",
         .event_handler = vhttpEventHandler,
-        .user_data = local_response_buffer,        // Pass address of local buffer to get response
+        .user_data = local_response_buffer, // Pass address of local buffer to get response
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     char post_data[100];
     snprintf(
-        post_data, 
-        sizeof(post_data), 
+        post_data,
+        sizeof(post_data),
         "{\"circumference\": %d, \"rotations\": %d, \"rideTime\": %d}",
         CIRCUMFERENCE,
         rideParams.rotations,
-        rideParams.totalRideTimeMs
-    );
+        rideParams.totalRideTimeMs);
     // @TODO use params and config
     esp_http_client_set_url(client, "http://malina9.ddns.net/obc_server/activities/");
     esp_http_client_set_method(client, HTTP_METHOD_POST);
@@ -111,33 +100,64 @@ void vHttpSyncRest(void *pvParameters)
     esp_http_client_set_post_field(client, post_data, strlen(post_data));
 
     ESP_LOGI(TAG, "Performing HTTP post request to OBC_Server");
-    esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_START_EVENT, NULL, 0, portMAX_DELAY);
 
     esp_err_t err = esp_http_client_perform(client);
-    bool reqestSuccessful;
+   
     if (err == ESP_OK) {
         reqestSuccessful = true;
         ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
+                 esp_http_client_get_status_code(client),
+                 esp_http_client_get_content_length(client));
     } else {
         reqestSuccessful = false;
         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
     }
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
-    esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_STOP_EVENT, &reqestSuccessful, sizeof(reqestSuccessful), portMAX_DELAY);
+    
     esp_http_client_cleanup(client);
+    return reqestSuccessful;
+}
 
-    ESP_LOGI(TAG, "Sync finished");
+static void vHttpSyncRestTask(void *pvParameters)
+{
+    // if unblocking happens by timeout (== 0) - sync, otherwise abort
+    if (ulTaskNotifyTake(pdTRUE, OBC_SERVER_SYNC_DEBOUNCE_MS / portTICK_RATE_MS) == 0) {
+        ESP_LOGI(TAG, "Starting wifi");
+        if (vInitWifiStation() != ESP_OK) {
+            ESP_LOGI(TAG, "Aborting sync due to connection error");
+        }
+        else {
+            esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_START_EVENT, NULL, 0, portMAX_DELAY);
+            vPerformPostReq();
+            esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_STOP_EVENT, &reqestSuccessful, sizeof(reqestSuccessful), portMAX_DELAY);
+            vDeinitWifiStation();
+            ESP_LOGI(TAG, "Sync finished");
+        }
+    }
+    else {
+        ESP_LOGI(TAG, "Activity detected, aborting synchronization");
+    }
+    sync_pending = false;
     vTaskDelete(NULL);
 }
 
 static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
-    // @TODO debouce with eventGroup. Wait for N seconds (from settings?) for rideStart event bit to cancel sync. Sync on timeout.
-    xTaskCreate(&vHttpSyncRest, "vHttpSyncRest", 8192, NULL, 5, NULL);
+    if (!sync_pending) {
+        sync_pending = true;
+        xTaskCreate(&vHttpSyncRestTask, "vHttpSyncRest", 8192, NULL, 5, &httpSyncRestTaskHandle);
+    } else {
+        ESP_LOGW(TAG, "Synchronization already pending");
+    }
+}
+
+static void vRideStartEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    if (sync_pending) {
+        xTaskNotifyGive(httpSyncRestTaskHandle);
+    }
 }
 
 void vRegisterServerSyncTask() {
     ESP_LOGI(TAG, "Init");
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_START_EVENT, vRideStartEventHandler, NULL));
 }
