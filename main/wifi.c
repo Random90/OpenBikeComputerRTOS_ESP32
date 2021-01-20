@@ -20,6 +20,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_MAX_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
 static int s_retry_num = 0;
+static esp_netif_t *wifi_netif_instance;
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -31,6 +32,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
             ESP_LOGI(TAG, "retry to connect to the AP");
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+            s_retry_num = 0;
         }
         ESP_LOGI(TAG,"connect to the AP fail");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -41,7 +43,20 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
     }
 }
 
-esp_netif_t *vInitWifiStation(void)
+
+void vDeinitWifiStation() {
+    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
+    vEventGroupDelete(s_wifi_event_group);
+
+    esp_wifi_disconnect();
+    esp_wifi_stop();
+    esp_wifi_deinit();
+    
+    esp_netif_destroy(wifi_netif_instance);
+}
+
+short vInitWifiStation(void)
 {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA INIT");
     
@@ -50,7 +65,7 @@ esp_netif_t *vInitWifiStation(void)
     ESP_ERROR_CHECK(esp_netif_init());
 
     // @TODO make global instace and check if already exists
-    esp_netif_t *wifi_netif_instance = esp_netif_create_default_wifi_sta();
+    wifi_netif_instance = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -90,23 +105,11 @@ esp_netif_t *vInitWifiStation(void)
         ESP_LOGI(TAG, "connected to ap SSID:%s", WIFI_SSID);
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s", WIFI_SSID);
-        return NULL;
+        vDeinitWifiStation();
+        return ESP_FAIL;
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        vDeinitWifiStation();
     }
-
-    return wifi_netif_instance;
-
-}
-
-void vDeinitWifiStation(esp_netif_t * wifi_netif_instance) {
-    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler));
-    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
-    vEventGroupDelete(s_wifi_event_group);
-
-    esp_wifi_disconnect();
-    esp_wifi_stop();
-    esp_wifi_deinit();
-    
-    esp_netif_destroy(wifi_netif_instance);
+    return ESP_OK;
 }

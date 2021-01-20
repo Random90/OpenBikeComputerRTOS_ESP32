@@ -75,9 +75,9 @@ void vHttpSyncRest(void *pvParameters)
     //@TODO retry after delay on no wifi
     //@TODO don't try to sync when no wifi
     ESP_LOGI(TAG, "Starting wifi");
-    esp_netif_t *wifi_netif_instance = vInitWifiStation();
+    
 
-    if (wifi_netif_instance == NULL) {
+    if (vInitWifiStation() != ESP_OK) {
         ESP_LOGI(TAG, "Aborting sync due to connection error");
         vTaskDelete(NULL);
     }
@@ -127,7 +127,6 @@ void vHttpSyncRest(void *pvParameters)
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
     esp_event_post_to(obc_events_loop, OBC_EVENTS, SYNC_STOP_EVENT, &reqestSuccessful, sizeof(reqestSuccessful), portMAX_DELAY);
     esp_http_client_cleanup(client);
-    vDeinitWifiStation(wifi_netif_instance);
 
     ESP_LOGI(TAG, "Sync finished");
     vTaskDelete(NULL);
