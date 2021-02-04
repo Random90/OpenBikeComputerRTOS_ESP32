@@ -24,6 +24,7 @@
 #include "Tasks/screen_pcd8544/screen_pcd8544.h"
 #include "Tasks/storage/spiffs_main.h"
 #include "Tasks/sync/obc_rest.task.h"
+#include "Tasks/sync/sntp.task.h"
 
 #define TAG "OBC_MAIN"
 
@@ -73,6 +74,7 @@ void vInitTasks() {
     xTaskCreate(&vRideStatusWatchdogTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
     xTaskCreate(&vSpiffsSyncOnStopTask, "vSpiffsSyncOnStopTask", 2048, NULL, 3, &spiffsSyncOnStopTaskHandle);
     xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, &screenRefreshTaskHandle);
+    xTaskCreate(&vSntpSyncTask, "vSntpSyncTask", 4096, NULL, 3, NULL);
 }
 
 void vAttachInterrupts() {
