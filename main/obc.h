@@ -19,6 +19,7 @@
     float distance;
     float maxSpeed;
     float totalDistance;
+    time_t startedTimestamp;
  } ride_params_t;
 
 extern ride_params_t rideParams;

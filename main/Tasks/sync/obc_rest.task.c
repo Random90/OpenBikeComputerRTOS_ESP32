@@ -73,7 +73,8 @@ static esp_err_t vhttpEventHandler(esp_http_client_event_t *evt)
 }
 static bool vPerformPostReq() {
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
-
+    char post_data[100];
+    
     esp_http_client_config_t config = {
         .host = WEB_SERVER,
         .path = "/activities/",
@@ -83,14 +84,15 @@ static bool vPerformPostReq() {
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
-    char post_data[100];
     snprintf(
         post_data,
         sizeof(post_data),
-        "{\"circumference\": %d, \"rotations\": %d, \"rideTime\": %d}",
+        "{\"circumference\": %d, \"rotations\": %d, \"rideTime\": %d, \"started\": %ju}",
         CIRCUMFERENCE,
         rideParams.rotations,
-        rideParams.totalRideTimeMs);
+        rideParams.totalRideTimeMs,
+        (uintmax_t)rideParams.startedTimestamp
+        );
     // @TODO use params and config
     esp_http_client_set_url(client, "http://malina9.ddns.net/obc_server/activities/");
     esp_http_client_set_method(client, HTTP_METHOD_POST);
