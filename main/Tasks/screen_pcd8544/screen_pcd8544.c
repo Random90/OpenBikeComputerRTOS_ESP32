@@ -12,7 +12,7 @@
 
 //hardware setup
 pcd8544_config_t config = {
-        .spi_host = HSPI_HOST,
+        .spi_host = VSPI_HOST,
         .is_backlight_common_anode = false,
 };
 

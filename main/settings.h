@@ -12,7 +12,7 @@
 
 #define ESP_INTR_FLAG_DEFAULT 0
 #define BLINK_GPIO 2
-#define REED_IO_NUM 18
+#define REED_IO_NUM 21
 
 #endif
 
