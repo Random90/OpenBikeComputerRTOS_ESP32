@@ -90,9 +90,9 @@ static void drawMainScreen() {
 static void drawSimpleDetailsScreen() {
     uint8_t rideHours, rideMinutes, rideSeconds;
 
-    rideHours = rideParams.totalRideTimeMs / 3600000;
-    rideMinutes = (rideParams.totalRideTimeMs / 60000) - (rideHours*60);
-    rideSeconds = (rideParams.totalRideTimeMs / 1000) - (rideMinutes*60);
+    rideHours = rideParams.totalRideTimeMs / 3600000 % 60;
+    rideMinutes = rideParams.totalRideTimeMs / 60000 % 60;
+    rideSeconds = rideParams.totalRideTimeMs / 1000 % 60;
 
     //TODO add mutual exclusion for reading rideParams?
     pcd8544_set_pos(0, 0);
@@ -106,7 +106,7 @@ static void drawSimpleDetailsScreen() {
     pcd8544_set_pos(0, 3);
     pcd8544_puts("              ");
     pcd8544_set_pos(0, 3);
-    pcd8544_printf("Time: %d:%d:%d", rideHours, rideMinutes, rideSeconds);
+    pcd8544_printf("Time: %02d:%02d:%02d", rideHours, rideMinutes, rideSeconds);
     pcd8544_sync_and_gc();
 }
 

@@ -5,3 +5,4 @@ sdkconfig.old
 .vscode/settings.json
 .vscode/c_cpp_properties.json
 .vscode/launch.json
+sdkconfig.esp32dev
