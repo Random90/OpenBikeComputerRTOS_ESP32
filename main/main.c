@@ -88,7 +88,7 @@ void vAttachInterrupts() {
     io_conf.mode = GPIO_MODE_INPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = 1ULL<<REED_IO_NUM;
-    io_conf.pull_up_en = 1;
+    io_conf.pull_down_en = 1;
     io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
