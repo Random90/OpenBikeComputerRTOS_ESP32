@@ -12,6 +12,6 @@
 // Task used to refresh the pcd8544 screen displayed information every half second
 void vScreenRefreshTask(void* data);
 
-// init screen hardware
+// init screen hardware and start refresh task
 void vInitPcd8544Screen();
 #endif

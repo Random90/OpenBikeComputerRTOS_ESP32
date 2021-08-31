@@ -71,8 +71,6 @@ void vCalcRideParamsOnISRTask(void* data)
 
             // ESP_LOGI(TAG, "[REED] count: %d, speed: %0.2f, diff: %d, distance: %0.2f", rideParams.rotations, rideParams.speed, rideParams.msBetweenRotationTicks, rideParams.distance);
             // ESP_LOGI(TAG, "[AVGS] speed: %0.2f", rideParams.avgSpeed);
-            // inform screen refresh task about movement
-            xTaskNotifyGive(screenRefreshTaskHandle);
         }
     }
 }

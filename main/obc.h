@@ -41,7 +41,6 @@ enum {
 extern xQueueHandle reed_evt_queue;
 
 //shared tasks
-extern TaskHandle_t screenRefreshTaskHandle;
 extern TaskHandle_t spiffsSyncOnStopTaskHandle;
 
 #endif

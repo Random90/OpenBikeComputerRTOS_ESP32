@@ -10,11 +10,14 @@
 
 #define TAG "PCD8544_TASK"
 
+static TaskHandle_t screenRefreshTaskHandle = NULL;
+
 //hardware setup
 pcd8544_config_t config = {
         .spi_host = VSPI_HOST,
         .is_backlight_common_anode = false,
 };
+
 
 // screen number to render
 uint8_t screenNumber = 1;
@@ -144,13 +147,23 @@ static void screenRenderer() {
     frameCounter++;
 }
 
+static void vRideStartEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    xTaskNotifyGive(screenRefreshTaskHandle);
+}
+
+static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
+    
+}
+
 void vScreenRefreshTask(void* data) {
-    // TODO enable screen toggler and rendering on not moving, before powerdown state
-    ESP_LOGI(TAG, "Init");
+    ESP_LOGI(TAG, "Screen refresher started");
 
     bool screenOff = false;
     uint32_t notificationVal = 0;
     TickType_t xLastWakeTime;
+
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_START_EVENT, vRideStartEventHandler, NULL));
 
     screenRenderer();
 
@@ -179,9 +192,12 @@ void vScreenRefreshTask(void* data) {
 
 void vInitPcd8544Screen() {
     ESP_LOGI(TAG, "Init pcd8544 screen");
+
     pcd8544_init(&config);
     pcd8544_set_backlight(true);
     pcd8544_clear_display();
     pcd8544_finalize_frame_buf();
     pcd8544_sync_and_gc();
+
+    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, &screenRefreshTaskHandle);
 }

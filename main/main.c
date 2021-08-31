@@ -58,7 +58,6 @@ ride_params_t rideParams = {
 };
 
 // Handles for the shared tasks create by init.
-TaskHandle_t screenRefreshTaskHandle = NULL;
 TaskHandle_t spiffsSyncOnStopTaskHandle = NULL;
 
 //IRAM_ATTR - function with this will be moved to RAM in order to execute faster than default from flash
@@ -68,14 +67,12 @@ static void IRAM_ATTR vReedISR(void* arg) {
 }
 
 void vInitTasks() {
-    // event loop created with task with priority 7
-    ESP_ERROR_CHECK(esp_event_loop_create(&obc_events_loop_args, &obc_events_loop));
     xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 6, NULL);  
     xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
     xTaskCreate(&vRideStatusWatchdogTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
     xTaskCreate(&vSpiffsSyncOnStopTask, "vSpiffsSyncOnStopTask", 2048, NULL, 3, &spiffsSyncOnStopTaskHandle);
-    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, &screenRefreshTaskHandle);
     xTaskCreate(&vSntpSyncTask, "vSntpSyncTask", 4096, NULL, 3, NULL);
+    vRegisterServerSyncTask();
 }
 
 void vAttachInterrupts() {
@@ -114,12 +111,15 @@ void app_main()
 {
     ESP_LOGI(TAG, "Initializing");
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // event loop created with task with priority 7
+    ESP_ERROR_CHECK(esp_event_loop_create(&obc_events_loop_args, &obc_events_loop));
+    
     vInitNVS();
     vInitSpiffs();
     vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
-    vRegisterServerSyncTask();
+
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, ESP_EVENT_ANY_ID, testHandler, obc_events_loop));
     ESP_LOGI(TAG, "Startup complete");
 }
