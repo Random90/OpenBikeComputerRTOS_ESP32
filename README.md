@@ -60,8 +60,8 @@ OBC uses VSPI (can be HSPI, but I use it for debug) to connect to LCD:
 | D25 | DC |
 | D19 | DIN |
 | D18 | CLK |
-| 3V3 | VIN |
-| RX2 | BL |
+| 3V3/5V | VIN |
+| RX2/G16 | BL |
 | GND | GND |
 
 ReedSwitch -> ESP D21 PIN
