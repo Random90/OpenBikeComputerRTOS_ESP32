@@ -10,7 +10,7 @@
 
 #define TAG "PCD8544_TASK"
 
-static TaskHandle_t screenRefreshTaskHandle = NULL;
+static TaskHandle_t powerdownScreenTaskHandle = NULL;
 
 //hardware setup
 pcd8544_config_t config = {
@@ -18,6 +18,9 @@ pcd8544_config_t config = {
         .is_backlight_common_anode = false,
 };
 
+// screen control variables
+
+bool screenPowerdownMode = false;
 
 // screen number to render
 uint8_t screenNumber = 1;
@@ -147,47 +150,50 @@ static void screenRenderer() {
     frameCounter++;
 }
 
-static void vRideStartEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
-    xTaskNotifyGive(screenRefreshTaskHandle);
+void vPowerdownScreenTask(void* data) {
+    if (ulTaskNotifyTake(pdTRUE, POWER_SAVE_DELAY_MS/portTICK_RATE_MS) == 0) {
+        ESP_LOGI(TAG, "Screen powerdown mode enabled");
+        pcd8544_set_powerdown_mode(true);
+        screenPowerdownMode = true;
+    } else {
+        ESP_LOGI(TAG, "Aborting screen powerdown mode");
+    }
+    vTaskDelete(NULL);
+} 
+
+static void vRideStartEventHandler() {
+    if (powerdownScreenTaskHandle) {
+        xTaskNotifyGive(powerdownScreenTaskHandle);
+    }
+    if (screenPowerdownMode) {
+        pcd8544_set_powerdown_mode(false);
+        screenPowerdownMode = false;
+    }
 }
 
-static void vRideStopEventHandler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data) {
-    
+static void vRideStopEventHandler() {
+    xTaskCreate(&vPowerdownScreenTask, "vPowerdownScreenTask", 2048, NULL, 2, &powerdownScreenTaskHandle);
 }
 
 void vScreenRefreshTask(void* data) {
     ESP_LOGI(TAG, "Screen refresher started");
-
-    bool screenOff = false;
-    uint32_t notificationVal = 0;
     TickType_t xLastWakeTime;
 
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_START_EVENT, vRideStartEventHandler, NULL));
 
+    vRideStopEventHandler();
     screenRenderer();
 
     while(true) {
-        if (rideParams.moving) {
-            xLastWakeTime = xTaskGetTickCount();
-            // refresh screen when riding
-            vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
+        xLastWakeTime = xTaskGetTickCount();
+        vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
+
+        if (!screenPowerdownMode) {
             screenRenderer();
-        } else {
-            // unblock and refresh/turn on screen when started moving again
-            notificationVal = ulTaskNotifyTake(pdTRUE, POWER_SAVE_DELAY_MS/portTICK_RATE_MS);
-            // turn off screen after POWER_SAVE_DELAY_MS
-            if (notificationVal == 0 && !screenOff) {
-                ESP_LOGI(TAG, "Screen powerdown mode");
-                pcd8544_set_powerdown_mode(true);
-                screenOff = true;
-            } else if (notificationVal > 0 && screenOff) {
-                pcd8544_set_powerdown_mode(false);
-                // TODO trans_queue_size warning
-                screenOff = false;
-            }
         }
     }
+    
 }
 
 void vInitPcd8544Screen() {
@@ -199,5 +205,5 @@ void vInitPcd8544Screen() {
     pcd8544_finalize_frame_buf();
     pcd8544_sync_and_gc();
 
-    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, &screenRefreshTaskHandle);
+    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, NULL);
 }
