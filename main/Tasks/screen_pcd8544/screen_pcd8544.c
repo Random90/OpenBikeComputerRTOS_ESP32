@@ -10,6 +10,12 @@
 
 #define TAG "PCD8544_TASK"
 
+/**
+ * Array of screen delays in miliseconds for each existing screen
+ * Refresh rate is 1/500ms, so delay for each screen should be multiplication of that
+ **/
+static const int SCREEN_TIMINGS[2] = {8000, 3500};
+
 static TaskHandle_t powerdownScreenTaskHandle = NULL;
 
 //hardware setup
@@ -21,11 +27,9 @@ pcd8544_config_t config = {
 // screen control variables
 
 bool screenPowerdownMode = false;
-
+TickType_t lastScreenChange = 0;
 // screen number to render
-uint8_t screenNumber = 1;
-// number of renders before screen toggle
-uint8_t frameCounter = 0;
+uint8_t currentScreenIdx = 1;
 
 /**
  * Used to display current speed compared to average as bar on the right side of the screen
@@ -116,38 +120,36 @@ static void drawSimpleDetailsScreen() {
     pcd8544_sync_and_gc();
 }
 
-// render one of the screens, use bitwise flags
-// uses crude method for calculating time, depending on the consants and number of rendered frames since last screen toggle
+// timebased screen switcher function
 // @warning each screen method must sync buffer for itself
 static void screenRenderer() {
+    TickType_t currentTickCount = xTaskGetTickCount();
+    int timeInactive = ((int) currentTickCount - (int) lastScreenChange) * (int) portTICK_RATE_MS;
     
-    // @TODO fix trans_queue_size reaches PCD8544_TRANS_QUEUE_SIZE(32). Is this library issue of blokcing task mid-render or something? 
-    if (SCREEN_CHANGE_AFTER_MS / REFRESH_RATE_MS <= frameCounter) {
-        frameCounter = 0;
-        screenNumber++;
-        if (screenNumber > IMPLEMENTED_SCREENS) {
-            screenNumber = 1;
+    if(timeInactive >= SCREEN_TIMINGS[currentScreenIdx]) {
+        lastScreenChange = xTaskGetTickCount();
+        currentScreenIdx++;
+        if (currentScreenIdx > IMPLEMENTED_SCREENS - 1) {
+            currentScreenIdx = 0;
         }
     }
+
     pcd8544_clear_display();
     pcd8544_finalize_frame_buf();
     pcd8544_sync_and_gc();
 
-    switch (screenNumber) {
-        case 1:
+    switch (currentScreenIdx) {
+        case 0:
             drawMainScreen();
             break;
-        case 2:
+        case 1:
             drawSimpleDetailsScreen();
             break;
         default:
             drawMainScreen();
-            ESP_LOGW(TAG, "[Renderer] Screen %d doesn't exists!", screenNumber);
+            ESP_LOGW(TAG, "[Renderer] Screen %d doesn't exists!", currentScreenIdx);
             break;
     }
-   
-    
-    frameCounter++;
 }
 
 void vPowerdownScreenTask(void* data) {
