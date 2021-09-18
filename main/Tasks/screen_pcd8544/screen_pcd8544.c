@@ -17,7 +17,8 @@
  * Refresh rate is 1/500ms, so delay for each screen should be multiplication of that
  **/
 static const int SCREEN_TIMINGS[2] = {8000, 3500};
-
+// screens used when not moving
+static const int SCREEN_TIMINGS_STOPPED[2] = {5000, 5000};
 static TaskHandle_t powerdownScreenTaskHandle = NULL;
 
 //hardware setup
@@ -98,7 +99,7 @@ static void vDrawDistanceUnit() {
     // @TODO display also above 100km
 }
 
-static void vDrawClockCentered() {
+static void vDrawClockCentered(uint8_t ypos) {
     time_t now;
     struct tm timeinfo;
     time(&now);
@@ -109,8 +110,20 @@ static void vDrawClockCentered() {
     char strftime_buf[9];
     strftime(strftime_buf, 9, "%H:%M:%S", &timeinfo);
 
-    pcd8544_set_pos(0, 3);
+    pcd8544_set_pos(0, ypos);
     pcd8544_printf("   %s", strftime_buf);
+}
+
+static void vDrawRideTime(uint8_t ypos) {
+    uint8_t rideHours, rideMinutes, rideSeconds;
+
+    rideHours = rideParams.totalRideTimeMs / 3600000 % 60;
+    rideMinutes = rideParams.totalRideTimeMs / 60000 % 60;
+    rideSeconds = rideParams.totalRideTimeMs / 1000 % 60;
+    pcd8544_set_pos(0, ypos);
+    pcd8544_puts("             ");
+    pcd8544_set_pos(0, ypos);
+    pcd8544_printf("Time:%02d:%02d:%02d", rideHours, rideMinutes, rideSeconds);
 }
 
 /**
@@ -131,11 +144,6 @@ static void vDrawMainScreen() {
 }
 
 static void vDrawRideDetails() {
-    uint8_t rideHours, rideMinutes, rideSeconds;
-
-    rideHours = rideParams.totalRideTimeMs / 3600000 % 60;
-    rideMinutes = rideParams.totalRideTimeMs / 60000 % 60;
-    rideSeconds = rideParams.totalRideTimeMs / 1000 % 60;
     
     vDrawMainSpeed();
     pcd8544_draw_line(0, 23, 84, 23);
@@ -143,16 +151,46 @@ static void vDrawRideDetails() {
     pcd8544_finalize_frame_buf();   
 
     vDrawSpeedUnit();
-    vDrawClockCentered();
+    vDrawClockCentered(3);
 
     pcd8544_set_pos(0, 4);
     pcd8544_puts("             ");
     pcd8544_set_pos(0, 4);
     pcd8544_printf("AvgSpd:%0.2f", rideParams.avgSpeed);
+    vDrawRideTime(5);
+    pcd8544_sync_and_gc();
+}
+
+// @TODO do it better
+static void vClearText() {
+    for (uint8_t i = 0; i <= 6; i++) {
+        pcd8544_set_pos(0, i);
+        pcd8544_puts("              ");
+    }
+}
+
+static void vDrawRideSummaryScreen() {
+    vClearText();
+    vDrawClockCentered(0);
+    pcd8544_set_pos(0, 2);
+    pcd8544_printf("     RIDE");
+    pcd8544_set_pos(0, 3);
+    pcd8544_printf("Dstn: %0.2f", rideParams.distance);
+    vDrawRideTime(4);
     pcd8544_set_pos(0, 5);
-    pcd8544_puts("             ");
-    pcd8544_set_pos(0, 5);
-    pcd8544_printf("Time:%02d:%02d:%02d", rideHours, rideMinutes, rideSeconds);
+    pcd8544_printf("AvgSpd: %0.2f", rideParams.avgSpeed);
+    pcd8544_sync_and_gc();
+}
+
+static void vDrawTotalScreen() {
+    vClearText();
+    vDrawClockCentered(0);
+    pcd8544_set_pos(0, 2);
+    pcd8544_printf("    TOTALS");
+    pcd8544_set_pos(0, 3);
+    pcd8544_printf("T.Dstn: %0.2f", rideParams.totalDistance);
+    pcd8544_set_pos(0, 4);
+    pcd8544_printf("MaxSpd: %0.2f", rideParams.maxSpeed);
     pcd8544_sync_and_gc();
 }
 
@@ -162,7 +200,7 @@ static void screenRenderer() {
     TickType_t currentTickCount = xTaskGetTickCount();
     int timeInactive = ((int) currentTickCount - (int) lastScreenChange) * (int) portTICK_RATE_MS;
     
-    if(timeInactive >= SCREEN_TIMINGS[currentScreenIdx]) {
+    if(timeInactive >= (rideParams.moving ? SCREEN_TIMINGS[currentScreenIdx] : SCREEN_TIMINGS_STOPPED[currentScreenIdx])) {
         lastScreenChange = xTaskGetTickCount();
         currentScreenIdx++;
         if (currentScreenIdx > IMPLEMENTED_SCREENS - 1) {
@@ -171,15 +209,13 @@ static void screenRenderer() {
     }
 
     pcd8544_clear_display();
-    pcd8544_finalize_frame_buf();
-    pcd8544_sync_and_gc();
 
     switch (currentScreenIdx) {
         case 0:
-            vDrawMainScreen();
+            rideParams.moving ? vDrawMainScreen() : vDrawRideSummaryScreen();
             break;
         case 1:
-            vDrawRideDetails();
+            rideParams.moving ? vDrawRideDetails() : vDrawTotalScreen();
             break;
         default:
             vDrawMainScreen();
@@ -211,6 +247,7 @@ static void vRideStartEventHandler() {
 
 static void vRideStopEventHandler() {
     xTaskCreate(&vPowerdownScreenTask, "vPowerdownScreenTask", 2048, NULL, 2, &powerdownScreenTaskHandle);
+    currentScreenIdx = 0;
 }
 
 void vScreenRefreshTask(void* data) {
