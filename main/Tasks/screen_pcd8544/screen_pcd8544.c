@@ -1,3 +1,5 @@
+#include <time.h>
+#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -31,6 +33,8 @@ TickType_t lastScreenChange = 0;
 // screen number to render
 uint8_t currentScreenIdx = 1;
 
+uint8_t bigCharPositions[6];
+
 /**
  * Used to display current speed compared to average as bar on the right side of the screen
  * */
@@ -52,71 +56,103 @@ static void drawAverageBar() {
     }
 }
 
-/**
- * @warning screen designed for default font
- * */
-static void drawMainScreen() {
-    uint8_t charRowsArr[6];
+static void vDrawMainSpeed() {
     uint8_t *speedChars[4];
-    uint8_t *distanceChars[6];
     uint8_t currentDrawingPos = 0;
-    // draw speed using big chars
-    vGetSpeedChars(speedChars, &rideParams.speed, charRowsArr);
+    vGetSpeedChars(speedChars, &rideParams.speed, bigCharPositions);
     for (int i = 0; i < 4; i++) {
         pcd8544_set_pos(currentDrawingPos, 0);
-        pcd8544_draw_bitmap(speedChars[i], charRowsArr[i], 3, true);
-        currentDrawingPos += charRowsArr[i];
+        pcd8544_draw_bitmap(speedChars[i], bigCharPositions[i], 3, true);
+        currentDrawingPos += bigCharPositions[i];
     }
+}
 
-    pcd8544_draw_line(0, 24, 84, 24);
-
-    // and draw distance
+static void vDrawMainDistance() {
+    uint8_t *distanceChars[6];
+    uint8_t currentDrawingPos = 0;
     currentDrawingPos = 0;
-    vGetDistanceChars(distanceChars, &rideParams.distance, charRowsArr);
+    vGetDistanceChars(distanceChars, &rideParams.distance, bigCharPositions);
     for (int i = 0; i < 6; i++) {
         if (distanceChars[i] == 0) {
             break;
         }
         pcd8544_set_pos(currentDrawingPos, 3);
-        pcd8544_draw_bitmap(distanceChars[i], charRowsArr[i], 3, true);
-        currentDrawingPos += charRowsArr[i];
+        pcd8544_draw_bitmap(distanceChars[i], bigCharPositions[i], 3, true);
+        currentDrawingPos += bigCharPositions[i];
     }
+}
 
-    drawAverageBar();
-    pcd8544_finalize_frame_buf();
-    // display some units
-    // prevents screen from breaking, there will be no space on it anyways
-    if(rideParams.distance < 100) {
-        pcd8544_set_pos(currentDrawingPos + 2, 5);
+static void vDrawSpeedUnit() {
+    pcd8544_set_pos(53, 1);
+    pcd8544_printf("km/h");
+}
+
+static void vDrawDistanceUnit() {
+    if(rideParams.distance < 10) {
+        pcd8544_set_pos(53, 4);
+        pcd8544_printf("km");
+    } else if (rideParams.distance < 100) {
+        pcd8544_set_pos(69, 4);
         pcd8544_printf("km");
     }
-    
-    pcd8544_set_pos(53, 2); //speed render has constant size
-    pcd8544_printf("km/h");
+    // @TODO display also above 100km
+}
+
+static void vDrawClockCentered() {
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    setenv("TZ", "CEST-1CET,M3.2.0/2:00:00,M11.1.0/2:00:00", 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
+
+    char strftime_buf[9];
+    strftime(strftime_buf, 9, "%H:%M:%S", &timeinfo);
+
+    pcd8544_set_pos(0, 3);
+    pcd8544_printf("   %s", strftime_buf);
+}
+
+/**
+ * @warning screen designed for default font
+ * */
+static void vDrawMainScreen() {
+   
+    vDrawMainSpeed();
+    pcd8544_draw_line(0, 23, 84, 23);
+    vDrawMainDistance();
+    drawAverageBar();
+    pcd8544_finalize_frame_buf();  
+
+    vDrawSpeedUnit();
+    vDrawDistanceUnit();
     pcd8544_sync_and_gc();
 
 }
-// FIXME add better line clearing
-static void drawSimpleDetailsScreen() {
+
+static void vDrawRideDetails() {
     uint8_t rideHours, rideMinutes, rideSeconds;
 
     rideHours = rideParams.totalRideTimeMs / 3600000 % 60;
     rideMinutes = rideParams.totalRideTimeMs / 60000 % 60;
     rideSeconds = rideParams.totalRideTimeMs / 1000 % 60;
+    
+    vDrawMainSpeed();
+    pcd8544_draw_line(0, 23, 84, 23);
+    drawAverageBar();
+    pcd8544_finalize_frame_buf();   
 
-    //TODO add mutual exclusion for reading rideParams?
-    pcd8544_set_pos(0, 0);
-    pcd8544_puts("              ");
-    pcd8544_set_pos(0, 0);
-    pcd8544_printf("AvgSpd: %0.2f", rideParams.avgSpeed);
-    pcd8544_set_pos(0, 1);
-    pcd8544_printf("T.Dstn: %0.2f", rideParams.totalDistance);
-    pcd8544_set_pos(0, 2);
-    pcd8544_printf("MaxSpd: %0.2f", rideParams.maxSpeed);
-    pcd8544_set_pos(0, 3);
-    pcd8544_puts("              ");
-    pcd8544_set_pos(0, 3);
-    pcd8544_printf("Time: %02d:%02d:%02d", rideHours, rideMinutes, rideSeconds);
+    vDrawSpeedUnit();
+    vDrawClockCentered();
+
+    pcd8544_set_pos(0, 4);
+    pcd8544_puts("             ");
+    pcd8544_set_pos(0, 4);
+    pcd8544_printf("AvgSpd:%0.2f", rideParams.avgSpeed);
+    pcd8544_set_pos(0, 5);
+    pcd8544_puts("             ");
+    pcd8544_set_pos(0, 5);
+    pcd8544_printf("Time:%02d:%02d:%02d", rideHours, rideMinutes, rideSeconds);
     pcd8544_sync_and_gc();
 }
 
@@ -140,13 +176,13 @@ static void screenRenderer() {
 
     switch (currentScreenIdx) {
         case 0:
-            drawMainScreen();
+            vDrawMainScreen();
             break;
         case 1:
-            drawSimpleDetailsScreen();
+            vDrawRideDetails();
             break;
         default:
-            drawMainScreen();
+            vDrawMainScreen();
             ESP_LOGW(TAG, "[Renderer] Screen %d doesn't exists!", currentScreenIdx);
             break;
     }

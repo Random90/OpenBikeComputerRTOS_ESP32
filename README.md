@@ -16,8 +16,8 @@ Creating community around this project for all programmers riding their bikes wo
 - average/max speed and total distance are stored on the device (not synchronized for now, only local)
 
 ### Display:
-- main and details screens
-- screens change automaticly (8s main, 3s details)
+- shows main and detailed ride data
+- bottom half of the screen changes automaticly (8s 'big' distance, 3s details)
 
 ### Synchronization using WiFi:
 - synchronize ride data with OBC Server (see https://github.com/Random90/OBC_Server)
