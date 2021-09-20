@@ -12,7 +12,7 @@
 /**
  * @brief SPI Tranfer queue size for ESP32-PCD8544
  */
-#define PCD8544_TRANS_QUEUE_SIZE 64
+#define PCD8544_TRANS_QUEUE_SIZE 128
 /**
  * @brief Bias System parameter for PCD8544
  *

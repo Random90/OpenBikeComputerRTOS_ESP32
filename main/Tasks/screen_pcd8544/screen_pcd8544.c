@@ -18,7 +18,7 @@
  **/
 static const int SCREEN_TIMINGS[2] = {8000, 3500};
 // screens used when not moving
-static const int SCREEN_TIMINGS_STOPPED[2] = {5000, 5000};
+static const int SCREEN_TIMINGS_STOPPED[2] = {6000, 4000};
 static TaskHandle_t powerdownScreenTaskHandle = NULL;
 
 //hardware setup
@@ -280,5 +280,5 @@ void vInitPcd8544Screen() {
     pcd8544_finalize_frame_buf();
     pcd8544_sync_and_gc();
 
-    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 2048, NULL, 2, NULL);
+    xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 4096, NULL, 2, NULL);
 }
