@@ -7,11 +7,9 @@
 
 #define TAG "SPIFFS_MAIN"
 
-//@TODO syncIntervalTask - to prevent big data loss on powerdown or error
-//@TODO clearing value, some protection agains huge speeds from interference
-//@TODO ride maxes/total maxes
 //@TODO saving ride data
-//@TODO fix random saving after stop wheb data is already saved (not changed)
+
+TaskHandle_t spiffsSyncOnStopTaskHandle = NULL;
 
 // values read from files
 float maxSpeedFileBuff = 0.00;
@@ -57,7 +55,6 @@ static void vSaveMaxSpeed(float speed) {
 static void vSaveTotalDistance() {
     if(rideParams.totalDistance > totalDistanceFileBuff) {
         ESP_LOGI(TAG, "[SAVING] totalDistance: %f", rideParams.totalDistance);
-        ESP_LOGI(TAG, "[TEST] count: %d, distance: %0.2f", rideParams.rotations, rideParams.distance);
         FILE *fTotalDistance = fopen("/spiffs/total_distance", "wb");
         if (fTotalDistance == NULL) {
             ESP_LOGE(TAG, "Failed to open file total_distance for update");
@@ -76,6 +73,10 @@ static void clearCorruptedData() {
         maxSpeedFileBuff = 0;
         vSaveMaxSpeed(maxSpeedFileBuff);
     }
+}
+
+static void vRideStopEventHandler() {
+    xTaskNotifyGive(spiffsSyncOnStopTaskHandle);
 }
 
 // update rideParams with max speed, total distance from files before ride
@@ -116,7 +117,9 @@ void vInitSpiffs() {
     }
 
     vPopulateRideParamsFromStorage();
-    
+    ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
+    xTaskCreate(&vSpiffsSyncOnStopTask, "vSpiffsSyncOnStopTask", 2048, NULL, 3, &spiffsSyncOnStopTaskHandle);
+
 }
 
 void vSpiffsSyncOnStopTask(void* data) {

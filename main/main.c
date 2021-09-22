@@ -58,9 +58,6 @@ ride_params_t rideParams = {
     .startedTimestamp = 0
 };
 
-// Handles for the shared tasks create by init.
-TaskHandle_t spiffsSyncOnStopTaskHandle = NULL;
-
 //IRAM_ATTR - function with this will be moved to RAM in order to execute faster than default from flash
 static void IRAM_ATTR vReedISR(void* arg) {
     portTickType xLastReedTickCount = xTaskGetTickCount();
@@ -71,7 +68,6 @@ void vInitTasks() {
     xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 6, NULL);  
     xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
     xTaskCreate(&vRideStatusWatchdogTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
-    xTaskCreate(&vSpiffsSyncOnStopTask, "vSpiffsSyncOnStopTask", 2048, NULL, 3, &spiffsSyncOnStopTaskHandle);
     xTaskCreate(&vSntpSyncTask, "vSntpSyncTask", 4096, NULL, 3, NULL);
     vRegisterServerSyncTask();
 }

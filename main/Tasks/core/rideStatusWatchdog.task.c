@@ -32,8 +32,6 @@ void vRideStatusWatchdogTask(void *arg) {
             rideParams.moving = false;
             rideParams.prevRotationTickCount = 0;
 
-            // store ride params if stopped
-            xTaskNotifyGive(spiffsSyncOnStopTaskHandle);
             esp_event_post_to(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, NULL, 0, portMAX_DELAY);
         } 
         vTaskDelayUntil(&currentTickCount, 1000/portTICK_RATE_MS);
