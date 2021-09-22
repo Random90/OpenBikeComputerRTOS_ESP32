@@ -39,6 +39,8 @@ static void vOnSyncFinishHandle(void* handler_args, esp_event_base_t base, int32
 
 void vCalcRideParamsOnISRTask(void* data)
 {
+    float currentSpeed;
+
     ESP_LOGI(TAG, "Init reed switch");
     
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, SYNC_START_EVENT, vOnSyncStartHandle, NULL));
@@ -58,7 +60,13 @@ void vCalcRideParamsOnISRTask(void* data)
                 rideParams.totalRideTimeMs += rideParams.msBetweenRotationTicks;
                 // TODO sometimes tick count doesn't update even with queue? prevent speed = inf for now
                 if (rideParams.msBetweenRotationTicks > 0.00) {
-                    rideParams.speed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) rideParams.msBetweenRotationTicks / 3600000 ); //km/h
+                    currentSpeed = ( (float) CIRCUMFERENCE/1000000 ) / ( (float) rideParams.msBetweenRotationTicks / 3600000 ); //km/h
+                    // simple, soft filtering of noise (from cables?) - should't introduce any discrepancy to actual data
+                    // and also could be used to detect unplanned, immediate stops
+                    if (abs(currentSpeed - rideParams.speed) < 50) {
+                        rideParams.speed = currentSpeed;
+                    }
+                    
                 }
                 if (rideParams.speed > rideParams.maxSpeed) {
                     rideParams.maxSpeed = rideParams.speed;
