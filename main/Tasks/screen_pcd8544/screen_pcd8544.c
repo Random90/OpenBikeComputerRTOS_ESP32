@@ -172,10 +172,12 @@ static void vClearText() {
 static void vDrawRideSummaryScreen() {
     vClearText();
     vDrawClockCentered(0);
-    pcd8544_set_pos(0, 2);
+    pcd8544_set_pos(0, 1);
     pcd8544_printf("     RIDE");
-    pcd8544_set_pos(0, 3);
+    pcd8544_set_pos(0, 2);
     pcd8544_printf("Dstn: %0.2f", rideParams.distance);
+    pcd8544_set_pos(0, 3);
+    pcd8544_printf("MaxSpd: %0.2f", rideParams.maxSpeed);
     vDrawRideTime(4);
     pcd8544_set_pos(0, 5);
     pcd8544_printf("AvgSpd: %0.2f", rideParams.avgSpeed);
@@ -190,7 +192,7 @@ static void vDrawTotalScreen() {
     pcd8544_set_pos(0, 3);
     pcd8544_printf("T.Dstn: %0.2f", rideParams.totalDistance);
     pcd8544_set_pos(0, 4);
-    pcd8544_printf("MaxSpd: %0.2f", rideParams.maxSpeed);
+    pcd8544_printf("MaxSpd: %0.2f", rideParams.globalMaxSpeed);
     pcd8544_sync_and_gc();
 }
 

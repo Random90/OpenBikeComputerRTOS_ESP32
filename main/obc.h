@@ -18,6 +18,7 @@
     float avgSpeed;
     float distance;
     float maxSpeed;
+    float globalMaxSpeed;
     float totalDistance;
     time_t startedTimestamp;
  } ride_params_t;

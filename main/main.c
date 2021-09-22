@@ -53,6 +53,7 @@ ride_params_t rideParams = {
     .avgSpeed = 0.0,
     .distance = 0.0,
     .maxSpeed = 0.0,
+    .globalMaxSpeed = 0.0,
     .totalDistance = 0.0,
     .startedTimestamp = 0
 };

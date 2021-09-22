@@ -41,18 +41,16 @@ void static vReadTotalDistance() {
     }
 }
 
-static void vSaveMaxSpeed() {
-    if(rideParams.maxSpeed > maxSpeedFileBuff) {
-        ESP_LOGI(TAG, "[SAVING] maxSpeed: %f", rideParams.maxSpeed);
-        FILE *fmaxSpeed = fopen("/spiffs/max_speed", "wb");
-        if (fmaxSpeed == NULL) {
-            ESP_LOGE(TAG, "Failed to open file max_speed for update");
-            return;
-        } else {
-            fwrite(&rideParams.maxSpeed, 1, sizeof(rideParams.maxSpeed), fmaxSpeed);
-            fclose(fmaxSpeed);
-            maxSpeedFileBuff = rideParams.maxSpeed;
-        }
+static void vSaveMaxSpeed(float speed) {
+    ESP_LOGI(TAG, "[SAVING] maxSpeed: %f", speed);
+    FILE *fmaxSpeed = fopen("/spiffs/max_speed", "wb");
+    if (fmaxSpeed == NULL) {
+        ESP_LOGE(TAG, "Failed to open file max_speed for update");
+        return;
+    } else {
+        fwrite(&speed, 1, sizeof(speed), fmaxSpeed);
+        fclose(fmaxSpeed);
+        maxSpeedFileBuff = speed;
     }
 }
 
@@ -72,14 +70,23 @@ static void vSaveTotalDistance() {
     }
 }
 
+static void clearCorruptedData() {
+    if (maxSpeedFileBuff > 227.72) {
+        ESP_LOGW(TAG, "MaxSpeed corrupted, overwriting");
+        maxSpeedFileBuff = 0;
+        vSaveMaxSpeed(maxSpeedFileBuff);
+    }
+}
+
 // update rideParams with max speed, total distance from files before ride
 static void vPopulateRideParamsFromStorage()
 {
     // @TODO mutex?
     vReadMaxSpeed();
-    rideParams.maxSpeed = maxSpeedFileBuff;
-
     vReadTotalDistance();
+    clearCorruptedData();
+
+    rideParams.globalMaxSpeed = maxSpeedFileBuff;
     rideParams.totalDistance = totalDistanceFileBuff;
 }
 
@@ -113,11 +120,12 @@ void vInitSpiffs() {
 }
 
 void vSpiffsSyncOnStopTask(void* data) {
-    uint32_t status;
     while (true)
     {
-        status = ulTaskNotifyTake(pdTRUE, SPIFFS_SYNC_INTERVAL_MS/portTICK_RATE_MS);
-        vSaveMaxSpeed();
+        ulTaskNotifyTake(pdTRUE, SPIFFS_SYNC_INTERVAL_MS/portTICK_RATE_MS);
+        if (rideParams.maxSpeed > maxSpeedFileBuff) {
+            vSaveMaxSpeed(rideParams.maxSpeed);
+        }
         vSaveTotalDistance();
     }
 }
