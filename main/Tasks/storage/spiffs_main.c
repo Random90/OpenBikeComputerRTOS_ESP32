@@ -128,6 +128,7 @@ void vSpiffsSyncOnStopTask(void* data) {
         ulTaskNotifyTake(pdTRUE, SPIFFS_SYNC_INTERVAL_MS/portTICK_RATE_MS);
         if (rideParams.maxSpeed > maxSpeedFileBuff) {
             vSaveMaxSpeed(rideParams.maxSpeed);
+            rideParams.globalMaxSpeed = maxSpeedFileBuff;
         }
         vSaveTotalDistance();
     }
