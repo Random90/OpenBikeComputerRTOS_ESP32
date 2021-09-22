@@ -250,6 +250,7 @@ static void vRideStartEventHandler() {
 static void vRideStopEventHandler() {
     xTaskCreate(&vPowerdownScreenTask, "vPowerdownScreenTask", 2048, NULL, 2, &powerdownScreenTaskHandle);
     currentScreenIdx = 0;
+    lastScreenChange = xTaskGetTickCount();
 }
 
 void vScreenRefreshTask(void* data) {
