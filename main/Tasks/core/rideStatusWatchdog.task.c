@@ -28,7 +28,6 @@ void vRideStatusWatchdogTask(void *arg) {
         if(rideParams.moving && !msg_count && timeInactive > RIDE_TIMEOUT_MS) {
             ESP_LOGI(TAG, "[RIDE_STATUS] Stopped moving");
             rideParams.speed = 0.0;
-            rideParams.msBetweenRotationTicks = 0;
             rideParams.moving = false;
             rideParams.prevRotationTickCount = 0;
 
