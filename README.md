@@ -50,7 +50,14 @@ See /3dcase folder for files. Print both "obc_case_bottom" and obc_case_top" .st
 
 ## Hardware
 
-### Required components (3d case is prepared specifically for that modules):
+## Prototype version
+
+Pritable case for version with no soldering required, everything connected with Dupont cables. Uses ESP devkit with pins, nokia 5110 screen with pins soldered. Powered up by micro usb cable.
+
+![prorotype](https://user-images.githubusercontent.com/13310754/221653899-1e14fe55-5d9b-4f5c-bfb3-7e1312a5d1ee.jpg)
+
+
+### Required components 
 - ESP_WROOM_32 DEVKIT V1 
 - Nokia 5110 LCD HXE
 - Reed switch
@@ -79,3 +86,10 @@ JTAG CJMCU-2232HL (note to myself)
 | D15 | AD2 |
 | D14 | AD3 |
 | GND | GND |
+
+## Standard version
+Soon
+## Standard version with battery
+Soon+
+## Micro fork version with battery
+Soon+++
