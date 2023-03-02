@@ -1,8 +1,8 @@
-#include "esp_spiffs.h"
-#include "esp_log.h"
-#include "esp_err.h"
-
 #include "spiffs_main.h"
+
+#include "esp_err.h"
+#include "esp_log.h"
+#include "esp_spiffs.h"
 #include "obc.h"
 
 #define TAG "SPIFFS_MAIN"
@@ -53,7 +53,7 @@ static void vSaveMaxSpeed(float speed) {
 }
 
 static void vSaveTotalDistance() {
-    if(rideParams.totalDistance > totalDistanceFileBuff) {
+    if (rideParams.totalDistance > totalDistanceFileBuff) {
         ESP_LOGI(TAG, "[SAVING] totalDistance: %f", rideParams.totalDistance);
         FILE *fTotalDistance = fopen("/spiffs/total_distance", "wb");
         if (fTotalDistance == NULL) {
@@ -80,8 +80,7 @@ static void vRideStopEventHandler() {
 }
 
 // update rideParams with max speed, total distance from files before ride
-static void vPopulateRideParamsFromStorage()
-{
+static void vPopulateRideParamsFromStorage() {
     // @TODO mutex?
     vReadMaxSpeed();
     vReadTotalDistance();
@@ -92,18 +91,17 @@ static void vPopulateRideParamsFromStorage()
 }
 
 void vInitSpiffs() {
-     ESP_LOGI(TAG, "Initializing SPIFFS");
+    ESP_LOGI(TAG, "Initializing SPIFFS");
 
-     esp_vfs_spiffs_conf_t conf = {
-      .base_path = "/spiffs",
-      .partition_label = NULL,
-      .max_files = MAX_FILES,
-      .format_if_mount_failed = true
-    };
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = MAX_FILES,
+        .format_if_mount_failed = true};
 
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
 
-     if (ret != ESP_OK) {
+    if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
         return;
     }
@@ -119,13 +117,11 @@ void vInitSpiffs() {
     vPopulateRideParamsFromStorage();
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
     xTaskCreate(&vSpiffsSyncOnStopTask, "vSpiffsSyncOnStopTask", 2048, NULL, 3, &spiffsSyncOnStopTaskHandle);
-
 }
 
-void vSpiffsSyncOnStopTask(void* data) {
-    while (true)
-    {
-        ulTaskNotifyTake(pdTRUE, SPIFFS_SYNC_INTERVAL_MS/portTICK_RATE_MS);
+void vSpiffsSyncOnStopTask(void *data) {
+    while (true) {
+        ulTaskNotifyTake(pdTRUE, SPIFFS_SYNC_INTERVAL_MS / portTICK_PERIOD_MS);
         if (rideParams.maxSpeed > maxSpeedFileBuff) {
             vSaveMaxSpeed(rideParams.maxSpeed);
             rideParams.globalMaxSpeed = maxSpeedFileBuff;

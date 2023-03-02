@@ -1,13 +1,13 @@
-#include <time.h>
+#include "screen_pcd8544.h"
+
 #include <sys/time.h>
+#include <time.h>
+
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_log.h"
-
-#include "screen_pcd8544.h"
 #include "obc.h"
 #include "pcd8544.h"
-
 #include "pcd8544_font_utils.h"
 
 #define TAG "PCD8544_TASK"
@@ -21,10 +21,10 @@ static const int SCREEN_TIMINGS[2] = {8000, 3500};
 static const int SCREEN_TIMINGS_STOPPED[2] = {6000, 4000};
 static TaskHandle_t powerdownScreenTaskHandle = NULL;
 
-//hardware setup
+// hardware setup
 pcd8544_config_t config = {
-        .spi_host = VSPI_HOST,
-        .is_backlight_common_anode = false,
+    .spi_host = VSPI_HOST,
+    .is_backlight_common_anode = false,
 };
 
 // screen control variables
@@ -47,8 +47,8 @@ static void drawAverageBar() {
         percentHeight = (int)((diff) / (rideParams.avgSpeed > 0 ? rideParams.avgSpeed : 1.00) * 100);
     } else {
         percentHeight = (int)((diff) / (rideParams.speed > 0 ? rideParams.speed : 1.00) * 100);
-    }    
-    // R = [-100, 100]    
+    }
+    // R = [-100, 100]
     percentHeight = percentHeight > 100 ? 100 : percentHeight;
     percentHeight = percentHeight < -100 ? -100 : percentHeight;
     // render
@@ -60,7 +60,7 @@ static void drawAverageBar() {
 static void vDrawMainSpeed() {
     uint8_t *speedChars[4];
     uint8_t currentDrawingPos = 0;
-    vGetSpeedChars(speedChars, &rideParams.speed, bigCharPositions);
+    vGetSpeedChars(speedChars, &rideParams.speed, &bigCharPositions);
     for (int i = 0; i < 4; i++) {
         pcd8544_set_pos(currentDrawingPos, 0);
         pcd8544_draw_bitmap(speedChars[i], bigCharPositions[i], 3, true);
@@ -72,7 +72,7 @@ static void vDrawMainDistance() {
     uint8_t *distanceChars[6];
     uint8_t currentDrawingPos = 0;
     currentDrawingPos = 0;
-    vGetDistanceChars(distanceChars, &rideParams.distance, bigCharPositions);
+    vGetDistanceChars(distanceChars, &rideParams.distance, &bigCharPositions);
     for (int i = 0; i < 6; i++) {
         if (distanceChars[i] == 0) {
             break;
@@ -89,7 +89,7 @@ static void vDrawSpeedUnit() {
 }
 
 static void vDrawDistanceUnit() {
-    if(rideParams.distance < 10) {
+    if (rideParams.distance < 10) {
         pcd8544_set_pos(53, 4);
         pcd8544_printf("km");
     } else if (rideParams.distance < 100) {
@@ -130,25 +130,22 @@ static void vDrawRideTime(uint8_t ypos) {
  * @warning screen designed for default font
  * */
 static void vDrawMainScreen() {
-   
     vDrawMainSpeed();
     pcd8544_draw_line(0, 23, 84, 23);
     vDrawMainDistance();
     drawAverageBar();
-    pcd8544_finalize_frame_buf();  
+    pcd8544_finalize_frame_buf();
 
     vDrawSpeedUnit();
     vDrawDistanceUnit();
     pcd8544_sync_and_gc();
-
 }
 
 static void vDrawRideDetails() {
-    
     vDrawMainSpeed();
     pcd8544_draw_line(0, 23, 84, 23);
     drawAverageBar();
-    pcd8544_finalize_frame_buf();   
+    pcd8544_finalize_frame_buf();
 
     vDrawSpeedUnit();
     vDrawClockCentered(3);
@@ -200,9 +197,9 @@ static void vDrawTotalScreen() {
 // @warning each screen method must sync buffer for itself
 static void screenRenderer() {
     TickType_t currentTickCount = xTaskGetTickCount();
-    int timeInactive = ((int) currentTickCount - (int) lastScreenChange) * (int) portTICK_RATE_MS;
-    
-    if(timeInactive >= (rideParams.moving ? SCREEN_TIMINGS[currentScreenIdx] : SCREEN_TIMINGS_STOPPED[currentScreenIdx])) {
+    int timeInactive = ((int)currentTickCount - (int)lastScreenChange) * (int)portTICK_PERIOD_MS;
+
+    if (timeInactive >= (rideParams.moving ? SCREEN_TIMINGS[currentScreenIdx] : SCREEN_TIMINGS_STOPPED[currentScreenIdx])) {
         lastScreenChange = xTaskGetTickCount();
         currentScreenIdx++;
         if (currentScreenIdx > IMPLEMENTED_SCREENS - 1) {
@@ -226,8 +223,8 @@ static void screenRenderer() {
     }
 }
 
-void vPowerdownScreenTask(void* data) {
-    if (ulTaskNotifyTake(pdTRUE, POWER_SAVE_DELAY_MS/portTICK_RATE_MS) == 0) {
+void vPowerdownScreenTask(void *data) {
+    if (ulTaskNotifyTake(pdTRUE, POWER_SAVE_DELAY_MS / portTICK_PERIOD_MS) == 0) {
         ESP_LOGI(TAG, "Screen powerdown mode enabled");
         pcd8544_set_powerdown_mode(true);
         screenPowerdownMode = true;
@@ -235,7 +232,7 @@ void vPowerdownScreenTask(void* data) {
         ESP_LOGI(TAG, "Aborting screen powerdown mode");
     }
     vTaskDelete(NULL);
-} 
+}
 
 static void vRideStartEventHandler() {
     if (powerdownScreenTaskHandle) {
@@ -253,7 +250,7 @@ static void vRideStopEventHandler() {
     lastScreenChange = xTaskGetTickCount();
 }
 
-void vScreenRefreshTask(void* data) {
+void vScreenRefreshTask(void *data) {
     ESP_LOGI(TAG, "Screen refresher started");
     TickType_t xLastWakeTime;
 
@@ -263,15 +260,14 @@ void vScreenRefreshTask(void* data) {
     vRideStopEventHandler();
     screenRenderer();
 
-    while(true) {
+    while (true) {
         xLastWakeTime = xTaskGetTickCount();
-        vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS/portTICK_RATE_MS);
+        vTaskDelayUntil(&xLastWakeTime, REFRESH_RATE_MS / portTICK_PERIOD_MS);
 
         if (!screenPowerdownMode) {
             screenRenderer();
         }
     }
-    
 }
 
 void vInitPcd8544Screen() {

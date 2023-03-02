@@ -1,9 +1,9 @@
 #include "esp_event.h"
-#include "esp_wifi.h"
 #include "esp_log.h"
+#include "esp_wifi.h"
+#include "freertos/event_groups.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
-#include "freertos/event_groups.h"
 
 #define TAG "OBC_WIFI"
 
@@ -14,13 +14,13 @@ static EventGroupHandle_t s_wifi_event_group;
  * - we are connected to the AP with an IP
  * - we failed to connect after the maximum amount of retries */
 #define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT      BIT1
-#define WIFI_SSID      CONFIG_ESP_WIFI_SSID
-#define WIFI_PASSWD      CONFIG_ESP_WIFI_PASSWORD
-#define WIFI_MAX_RETRY  CONFIG_ESP_MAXIMUM_RETRY
+#define WIFI_FAIL_BIT BIT1
+#define WIFI_SSID CONFIG_ESP_WIFI_SSID
+#define WIFI_PASSWD CONFIG_ESP_WIFI_PASSWORD
+#define WIFI_MAX_RETRY CONFIG_ESP_MAXIMUM_RETRY
 
 static int s_retry_num = 0;
-static esp_netif_t *wifi_netif_instance;
+static esp_netif_t* wifi_netif_instance;
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -34,15 +34,14 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
             s_retry_num = 0;
         }
-        ESP_LOGI(TAG,"connect to the AP fail");
+        ESP_LOGI(TAG, "connect to the AP fail");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:%s", ip4addr_ntoa(&event->ip_info.ip));
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+        ESP_LOGI(TAG, "got ip:%s", esp_ip4addr_ntoa(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
-
 
 void vDeinitWifiStation() {
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler));
@@ -52,14 +51,13 @@ void vDeinitWifiStation() {
     esp_wifi_disconnect();
     esp_wifi_stop();
     esp_wifi_deinit();
-    
+
     esp_netif_destroy(wifi_netif_instance);
 }
 
-short vInitWifiStation(void)
-{
+short vInitWifiStation(void) {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA INIT");
-    
+
     s_wifi_event_group = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
@@ -77,16 +75,13 @@ short vInitWifiStation(void)
         .sta = {
             .ssid = WIFI_SSID,
             .password = WIFI_PASSWD,
-	        .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
             .pmf_cfg = {
                 .capable = true,
-                .required = false
-            }
-        }
-    };
+                .required = false}}};
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
@@ -94,10 +89,10 @@ short vInitWifiStation(void)
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by wifi_event_handler() (see above) */
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY);
+                                           WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+                                           pdFALSE,
+                                           pdFALSE,
+                                           portMAX_DELAY);
 
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
