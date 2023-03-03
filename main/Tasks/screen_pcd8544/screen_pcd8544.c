@@ -60,7 +60,7 @@ static void drawAverageBar() {
 static void vDrawMainSpeed() {
     uint8_t *speedChars[4];
     uint8_t currentDrawingPos = 0;
-    vGetSpeedChars(speedChars, &rideParams.speed, &bigCharPositions);
+    vGetSpeedChars(speedChars, &rideParams.speed, bigCharPositions);
     for (int i = 0; i < 4; i++) {
         pcd8544_set_pos(currentDrawingPos, 0);
         pcd8544_draw_bitmap(speedChars[i], bigCharPositions[i], 3, true);
@@ -72,7 +72,7 @@ static void vDrawMainDistance() {
     uint8_t *distanceChars[6];
     uint8_t currentDrawingPos = 0;
     currentDrawingPos = 0;
-    vGetDistanceChars(distanceChars, &rideParams.distance, &bigCharPositions);
+    vGetDistanceChars(distanceChars, &rideParams.distance, bigCharPositions);
     for (int i = 0; i < 6; i++) {
         if (distanceChars[i] == 0) {
             break;
