@@ -1,4 +1,4 @@
-#ifdef NO_SCREEN
+#ifndef NO_SCREEN
 #include "Tasks/screen_pcd8544/screen_pcd8544.h"
 #include "driver/spi_common.h"
 #endif
@@ -76,11 +76,12 @@ void vAttachInterrupts() {
     io_conf.mode = GPIO_MODE_INPUT;
     // bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = 1ULL << REED_IO_NUM;
-    io_conf.pull_down_en = 1;
-    io_conf.intr_type = GPIO_INTR_POSEDGE;
+    io_conf.pull_up_en = 1;
+    io_conf.pull_down_en = 0;
+    io_conf.intr_type = GPIO_INTR_NEGEDGE;
     // configure GPIO with the given settings
     gpio_config(&io_conf);
-    gpio_set_intr_type(REED_IO_NUM, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(REED_IO_NUM, io_conf.intr_type);
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     gpio_isr_handler_add(REED_IO_NUM, vReedISR, (void*)REED_IO_NUM);
 }

@@ -75,7 +75,7 @@ OBC uses VSPI (can be HSPI, but I use it for debug) to connect to LCD:
 | RX2/G16 | BL |
 | GND | GND |
 
-ReedSwitch -> ESP D21 PIN
+ReedSwitch -> ESP D21 PIN -> GND
 
 JTAG CJMCU-2232HL (note to myself)
 
@@ -86,10 +86,10 @@ JTAG CJMCU-2232HL (note to myself)
 | D15 | AD2 |
 | D14 | AD3 |
 | GND | GND |
-
+## Micro fork version with battery
+Work in progress!
 ## Standard version
 Soon
 ## Standard version with battery
 Soon+
-## Micro fork version with battery
-Soon+++
+
