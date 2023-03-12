@@ -1,3 +1,4 @@
+#ifndef NO_SCREEN
 #include <pcd8544_font_utils.h>
 
 #include "esp_log.h"
@@ -68,3 +69,5 @@ void vGetDistanceChars(uint8_t *charArr[6], float *distance, uint8_t *bigCharPos
     }
     fillCharsFromBuffer(charArr, buffer, 10, bigCharPositions);
 }
+
+#endif  // NO_SCREEN

@@ -1,3 +1,4 @@
+#ifndef NO_SCREEN
 #include "pcd8544_font16x24.h"
 
 uint8_t fontDetermination[11][CHAR_SIZE] = {
@@ -518,3 +519,4 @@ uint8_t fontDetermination[11][CHAR_SIZE] = {
 
         }};
 
+#endif

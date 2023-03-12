@@ -1,15 +1,17 @@
+#ifdef NO_SCREEN
+#include "Tasks/screen_pcd8544/screen_pcd8544.h"
+#include "driver/spi_common.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Tasks/core/blinker.task.h"
 #include "Tasks/core/calcRideParamsOnISR.task.h"
 #include "Tasks/core/rideStatusWatchdog.task.h"
-#include "Tasks/screen_pcd8544/screen_pcd8544.h"
 #include "Tasks/storage/spiffs_main.h"
 #include "Tasks/sync/obc_rest.task.h"
 #include "Tasks/sync/sntp.task.h"
 #include "driver/gpio.h"
-#include "driver/spi_common.h"
 #include "esp_event_base.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -59,7 +61,6 @@ static void IRAM_ATTR vReedISR(void* arg) {
 
 void vInitTasks() {
     xTaskCreate(&vCalcRideParamsOnISRTask, "vCalcRideParamsOnISRTask", 2048, NULL, 6, NULL);
-    xTaskCreate(&vBlinkerTask, "vBlinkerTask", 2048, NULL, 5, NULL);
     xTaskCreate(&vRideStatusWatchdogTask, "vRideStatusIntervalCheckTask", 2048, NULL, 3, NULL);
     xTaskCreate(&vSntpSyncTask, "vSntpSyncTask", 4096, NULL, 3, NULL);
     vRegisterServerSyncTask();
@@ -105,9 +106,11 @@ void app_main() {
 
     vInitNVS();
     vInitSpiffs();
-    vInitPcd8544Screen();
     vAttachInterrupts();
     vInitTasks();
+#ifndef NO_SCREEN
+    vInitPcd8544Screen();
+#endif
 
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, ESP_EVENT_ANY_ID, testHandler, obc_events_loop));
     ESP_LOGI(TAG, "Startup complete");

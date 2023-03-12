@@ -1,3 +1,4 @@
+#ifndef NO_SCREEN
 #include "screen_pcd8544.h"
 
 #include <sys/time.h>
@@ -281,3 +282,4 @@ void vInitPcd8544Screen() {
 
     xTaskCreate(&vScreenRefreshTask, "vScreenRefreshTask", 4096, NULL, 2, NULL);
 }
+#endif

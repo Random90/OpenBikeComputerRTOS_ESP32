@@ -6,3 +6,5 @@ sdkconfig.old
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 sdkconfig.esp32dev
+sdkconfig.dfrobot_beetle_esp32c3.old
+sdkconfig.dfrobot_beetle_esp32c3

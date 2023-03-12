@@ -2,7 +2,6 @@ idf_component_register(
     SRCS 
         "main.c"
         "wifi.c"
-        "Tasks/core/blinker.task.c" 
         "Tasks/core/calcRideParamsOnISR.task.c" 
         "Tasks/core/rideStatusWatchdog.task.c" 
         "Tasks/storage/spiffs_main.c" 
