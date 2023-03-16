@@ -62,13 +62,15 @@ void vCalcRideParamsOnISRTask(void *data) {
             // TODO block rideParams while calculating?
             if (!rideParams.moving) {
                 esp_event_post_to(obc_events_loop, OBC_EVENTS, RIDE_START_EVENT, NULL, 0, portMAX_DELAY);
+            } else {
+                // ignore the first tick after ride start, since it is idle time
+                rideParams.totalRideTimeMs += msBetweenRotationTicks;
             }
 
             currentSpeed = ((float)CIRCUMFERENCE / 1000000) / ((float)msBetweenRotationTicks / 3600000);  // km/h
             rideParams.moving = true;
             rideParams.rotations++;
             rideParams.speed = currentSpeed;
-            rideParams.totalRideTimeMs += msBetweenRotationTicks;
             rideParams.distance += (float)CIRCUMFERENCE / 1000000;
             rideParams.totalDistance += (float)CIRCUMFERENCE / 1000000;
             rideParams.avgSpeed = rideParams.distance / ((float)rideParams.totalRideTimeMs / 3600000);
