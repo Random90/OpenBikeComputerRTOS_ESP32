@@ -23,9 +23,10 @@ void vRideStatusWatchdogTask(void *arg) {
     ESP_LOGI(TAG, "Initialization");
 
     while (true) {
-        msg_count = uxQueueMessagesWaitingFromISR(reed_evt_queue);
+        msg_count = uxQueueMessagesWaiting(reed_evt_queue);
         currentTickCount = xTaskGetTickCount();
         timeInactive = ((int)currentTickCount - (int)rideParams.prevRotationTickCount) * (int)portTICK_PERIOD_MS;
+        // ESP_LOGI(TAG, "msg_count: %d, timeInactive: %d", msg_count, timeInactive);
 
         if (rideParams.moving && !msg_count && timeInactive > RIDE_TIMEOUT_MS) {
             ESP_LOGI(TAG, "[RIDE_STATUS] Stopped moving");

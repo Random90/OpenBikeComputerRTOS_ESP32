@@ -55,8 +55,13 @@ ride_params_t rideParams = {
 
 // IRAM_ATTR - function with this will be moved to RAM in order to execute faster than default from flash
 static void IRAM_ATTR vReedISR(void* arg) {
-    TickType_t xLastReedTickCount = xTaskGetTickCount();
-    xQueueSendFromISR(reed_evt_queue, &xLastReedTickCount, NULL);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    TickType_t xLastReedTickCount = xTaskGetTickCountFromISR();
+
+    xQueueSendFromISR(reed_evt_queue, &xLastReedTickCount, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR();
+    }
 }
 
 void vInitTasks() {
@@ -81,9 +86,9 @@ void vAttachInterrupts() {
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
     // configure GPIO with the given settings
     gpio_config(&io_conf);
-    gpio_set_intr_type(REED_IO_NUM, io_conf.intr_type);
+    // gpio_set_intr_type(REED_IO_NUM, GPIO_INTR_NEGEDGE);
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
-    gpio_isr_handler_add(REED_IO_NUM, vReedISR, (void*)REED_IO_NUM);
+    gpio_isr_handler_add(REED_IO_NUM, vReedISR, NULL);
 }
 
 void vInitNVS() {
