@@ -8,3 +8,4 @@ sdkconfig.old
 sdkconfig.esp32dev
 sdkconfig.dfrobot_beetle_esp32c3.old
 sdkconfig.dfrobot_beetle_esp32c3
+sdkconfig.esp32dev.old
