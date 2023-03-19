@@ -30,12 +30,10 @@ pcd8544_config_t config = {
 
 // screen control variables
 
-bool screenPowerdownMode = false;
-TickType_t lastScreenChange = 0;
-// screen number to render
-uint8_t currentScreenIdx = 1;
-
-uint8_t bigCharPositions[6];
+static bool screenPowerdownMode = false;
+static TickType_t lastScreenChange = 0;
+static uint8_t currentScreenIdx = 1;
+static uint8_t bigCharPositions[6];
 
 /**
  * Used to display current speed compared to average as bar on the right side of the screen
@@ -198,14 +196,18 @@ static void vDrawTotalScreen() {
 // @warning each screen method must sync buffer for itself
 static void screenRenderer() {
     TickType_t currentTickCount = xTaskGetTickCount();
-    int timeInactive = ((int)currentTickCount - (int)lastScreenChange) * (int)portTICK_PERIOD_MS;
+    uint32_t timeInactive = (currentTickCount - lastScreenChange) * portTICK_PERIOD_MS;
+
+    // ESP_LOGI(TAG, "Rendering screen %d after %"PRIu32" ms. Tick %"PRIu32" change tick %"PRIu32, 
+    //     currentScreenIdx, timeInactive, currentTickCount, lastScreenChange);
+
 
     if (timeInactive >= (rideParams.moving ? SCREEN_TIMINGS[currentScreenIdx] : SCREEN_TIMINGS_STOPPED[currentScreenIdx])) {
-        lastScreenChange = xTaskGetTickCount();
         currentScreenIdx++;
         if (currentScreenIdx > IMPLEMENTED_SCREENS - 1) {
             currentScreenIdx = 0;
         }
+        lastScreenChange = currentTickCount;
     }
 
     pcd8544_clear_display();
@@ -252,8 +254,9 @@ static void vRideStopEventHandler() {
 }
 
 void vScreenRefreshTask(void *data) {
-    ESP_LOGI(TAG, "Screen refresher started");
     TickType_t xLastWakeTime;
+
+    ESP_LOGI(TAG, "Screen refresher started");
 
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_STOP_EVENT, vRideStopEventHandler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register_with(obc_events_loop, OBC_EVENTS, RIDE_START_EVENT, vRideStartEventHandler, NULL));
