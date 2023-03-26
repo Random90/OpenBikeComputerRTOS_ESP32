@@ -10,6 +10,7 @@ idf_component_register(
         "Tasks/screen_pcd8544/pcd8544_font16x24.c"
         "Tasks/sync/obc_rest.task.c"
         "Tasks/sync/sntp.task.c"
+        "Tasks/bluetooth_le/ble_main.c""
         "utils/math.c" 
     INCLUDE_DIRS 
         "Tasks" 
@@ -17,5 +18,6 @@ idf_component_register(
         "Tasks/screen_pcd8544" 
         "Tasks/storage" 
         "Tasks/sync"
+        "Tasks/bluetooth_le"
         "utils"
 )
