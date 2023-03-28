@@ -2,15 +2,10 @@
 #include "Tasks/screen_pcd8544/screen_pcd8544.h"
 #include "driver/spi_common.h"
 #endif
-
+/* CORE */
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "Tasks/core/calcRideParamsOnISR.task.h"
-#include "Tasks/core/rideStatusWatchdog.task.h"
-#include "Tasks/storage/spiffs_main.h"
-#include "Tasks/sync/obc_rest.task.h"
-#include "Tasks/sync/sntp.task.h"
+/* ESP/RTOS */
 #include "driver/gpio.h"
 #include "esp_event_base.h"
 #include "esp_log.h"
@@ -19,8 +14,15 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
-#include "obc.h"
 #include "sdkconfig.h"
+/* OBC */
+#include "Tasks/core/calcRideParamsOnISR.task.h"
+#include "Tasks/core/rideStatusWatchdog.task.h"
+#include "Tasks/storage/spiffs_main.h"
+#include "Tasks/sync/obc_rest.task.h"
+#include "Tasks/sync/sntp.task.h"
+#include "ble_main.h"
+#include "obc.h"
 #include "settings.h"
 #include "utils/math.h"
 
@@ -114,6 +116,7 @@ void app_main() {
     vInitSpiffs();
     vAttachInterrupts();
     vInitTasks();
+    vInitBle();
 #ifndef NO_SCREEN
     vInitPcd8544Screen();
 #endif

@@ -1,6 +1,6 @@
 #ifdef NO_SCREEN
 
-#include "gatt_server.h"
+#include "gat_server.h"
 
 #include "host/ble_hs.h"
 #include "host/ble_uuid.h"
@@ -8,9 +8,7 @@
 #include "services/gatt/ble_svc_gatt.h"
 
 uint16_t cyclingServiceHandle;
-// static int gattServerAccessMeasurmentInterval(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
-static int gattServerAccessAppearance(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
-static int gattServerAccessDeviceName(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+static int gatServerAccessCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
 
 static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     {/* Service: Cycling Speed and Cadence service */
@@ -20,7 +18,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
          {
              /* Characteristic: Appearance */
              .uuid = BLE_UUID16_DECLARE(GATT_CSS_CYCLING_APPEARANCE_UUID),
-             .access_cb = gattServerAccessAppearance,
+             .access_cb = gatServerAccessCallback,
              .flags = BLE_GATT_CHR_F_READ,
          },
          {
@@ -42,7 +40,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
          {
              /* Characteristic: * Device name */
              .uuid = BLE_UUID16_DECLARE(GATT_DI_DEVICE_NAME_UUID),
-             .access_cb = gattServerAccessDeviceName,
+             .access_cb = gatServerAccessCallback,
              .flags = BLE_GATT_CHR_F_READ,
          },
          {
@@ -74,7 +72,7 @@ int gatServerInit(void) {
     return 0;
 }
 
-static int gattServerAccessAppearance(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg) {
+static int gatServerAccessCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg) {
     uint16_t uuid;
     uint16_t appearance = GATT_CSS_CYCLING_COMP_APPEAR_UUID;
     int returnCode;

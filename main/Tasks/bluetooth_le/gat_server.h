@@ -11,7 +11,7 @@
 #define GATT_DEVICE_INFO_UUID 0x180A
 #define GATT_DI_DEVICE_NAME_UUID 0x2A00
 
-uint16_t cyclingServiceHandle;
+extern uint16_t cyclingServiceHandle;
 static const char *device_name = "Microb OpenBikeComputer";
 
 int gatServerInit(void);
