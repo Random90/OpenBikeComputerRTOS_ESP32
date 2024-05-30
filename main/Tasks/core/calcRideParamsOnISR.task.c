@@ -37,7 +37,7 @@ static void vOnSyncFinishHandle(void *handler_args, esp_event_base_t base, int32
 
 void vCalcRideParamsOnISRTask(void *data) {
     float currentSpeed;
-    uint16_t msBetweenRotationTicks = 0;
+    uint32_t msBetweenRotationTicks = 0;
 
     ESP_LOGI(TAG, "Init reed switch");
 
