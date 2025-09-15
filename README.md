@@ -4,8 +4,6 @@
 This repo is an open source bike computer based on freeRTOS on ~~ESP8266~~ ESP32. (ESP32 is much newer hardware, no reason to stick with esp8266 right now)
 This is an attempt of learning C and freeRTOS env. I've first made bike computer using arduino nano, so this might be refered as version 2. I've also tackled a little of 3d design in blender to create a case for this bike computer.
 
-Creating community around this project for all programmers riding their bikes would be awesome :)
-
 
 ## Features
 ### Core:
@@ -86,10 +84,4 @@ JTAG CJMCU-2232HL (note to myself)
 | D15 | AD2 |
 | D14 | AD3 |
 | GND | GND |
-## Micro fork version with battery
-Work in progress!
-## Standard version
-Soon
-## Standard version with battery
-Soon+
 
