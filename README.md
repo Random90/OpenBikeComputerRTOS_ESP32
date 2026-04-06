@@ -16,6 +16,7 @@ This is an attempt of learning C and freeRTOS env. I've first made bike computer
 ### Display:
 - shows main and detailed ride data
 - bottom half of the screen changes automaticly (8s 'big' distance, 3s details)
+- the bar on the right side of the screen show how much faster/slower you are going compared to average speed. Line in the middle (as on the photo) means current speed is close or equal to average. Full bar or no bar means you are going 2x faster/slower
 
 ### Synchronization using WiFi:
 - synchronize ride data with OBC Server (see https://github.com/Random90/OBC_Server)
