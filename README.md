@@ -52,7 +52,8 @@ See /3dcase folder for files. Print both "obc_case_bottom" and obc_case_top" .st
 
 Pritable case for version with no soldering required, everything connected with Dupont cables. Uses ESP devkit with pins, nokia 5110 screen with pins soldered. Powered up by micro usb cable.
 
-![prorotype](https://user-images.githubusercontent.com/13310754/221653899-1e14fe55-5d9b-4f5c-bfb3-7e1312a5d1ee.jpg)
+| ![prorotype](https://user-images.githubusercontent.com/13310754/221653899-1e14fe55-5d9b-4f5c-bfb3-7e1312a5d1ee.jpg) | ![205929164_4467411343282436_2926237006868304169_n](https://github.com/user-attachments/assets/2fe3dda0-7131-432b-a242-c2487741ea2d) |
+--- | --- |
 
 
 ### Required components 
